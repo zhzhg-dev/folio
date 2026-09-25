@@ -1,0 +1,15 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { citationStatus, countChanges, validateDocument } from "../lib/folio/integrity.ts";
+const version=(id,text)=>({id,text,pages:[{page:1,text}],createdAt:"2026-09-26",hash:id,size:text.length});
+const quote="Supports offline exports.";
+const attrs={sourceId:"s1",versionId:"v1",quote,label:"1",page:1};
+const citation={type:"citation",attrs};
+const content={type:"doc",content:[{type:"paragraph",content:[{type:"text",text:"My own analysis."},citation]}]};
+const project=(versions)=>({id:"p",sources:[{id:"s1",name:"Source",kind:"txt",color:"blue",versions}],content});
+test("a citation resolves to its immutable original revision",()=>assert.equal(citationStatus(attrs,project([version("v1",quote)])),"current"));
+test("changed evidence is flagged without changing the writer's content",()=>{const p=project([version("v1",quote),version("v2","Offline exports are no longer supported.")]);const before=JSON.stringify(p.content);assert.equal(countChanges(p),1);assert.equal(JSON.stringify(p.content),before);assert.equal(p.sources[0].versions[0].text,quote);});
+test("moved but unchanged evidence remains verifiable in the old version",()=>assert.equal(citationStatus(attrs,project([version("v1",quote),version("v2","New introduction.\n"+quote)])),"older"));
+test("fabricated quote and missing version cannot appear verified",()=>{const p=project([version("v1",quote)]);assert.equal(citationStatus({...attrs,quote:"Invented evidence"},p),"missing");assert.equal(citationStatus({...attrs,versionId:"absent"},p),"missing");});
+test("valid content restores, unsupported nodes and malformed citations do not",()=>{assert.equal(validateDocument(content),true);assert.equal(validateDocument({type:"script",text:"alert(1)"}),false);assert.equal(validateDocument({type:"citation",attrs:{sourceId:12}}),false);});
+test("excessive nesting is rejected before restoring a backup",()=>{let n={type:"paragraph",content:[]};for(let i=0;i<40;i++)n={type:"blockquote",content:[n]};assert.equal(validateDocument(n),false);});
