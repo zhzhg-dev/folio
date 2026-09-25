@@ -1,5 +1,10 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import Home from './app/page';
-import './app/globals.css';
-createRoot(document.getElementById('root')!).render(<Home />);
+import React from "react";
+import { createRoot } from "react-dom/client";
+import Home from "./app/page";
+import "@fontsource-variable/geist";
+import "@fontsource-variable/newsreader/standard.css";
+import "@fontsource-variable/newsreader/standard-italic.css";
+import "@fontsource-variable/noto-sans-sc";
+import "./app/globals.css";
+import "./app/atelier.css";
+createRoot(document.getElementById("root")!).render(<Home />);

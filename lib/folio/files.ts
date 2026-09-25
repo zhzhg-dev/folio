@@ -5,6 +5,7 @@ import {
   type Project,
   type Source,
   type SourceVersion,
+  type Language,
 } from "./model.ts";
 import type { JSONContent } from "@tiptap/react";
 export function download(blob: Blob, name: string) {
@@ -140,12 +141,12 @@ export function referenceLines(project: Project) {
     ];
   });
 }
-export function exportMarkdown(project: Project) {
+export function exportMarkdown(project: Project, language: Language = "en") {
   const references = referenceLines(project);
   download(
     new Blob(
       [
-        `# ${project.reportTitle}\n\n${project.description}\n\n${markdown(project.content)}${references.length ? `\n\n---\n\n## 参考来源 / Sources\n\n${references.join("\n\n")}` : ""}`,
+        `# ${project.reportTitle}\n\n${project.description}\n\n${markdown(project.content)}${references.length ? `\n\n---\n\n## ${language === "zh" ? "参考来源" : "Sources"}\n\n${references.join("\n\n")}` : ""}`,
       ],
       { type: "text/markdown;charset=utf-8" },
     ),
@@ -158,7 +159,7 @@ const escape = (s: string) =>
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
-export function exportHtml(project: Project) {
+export function exportHtml(project: Project, language: Language = "en") {
   const render = (node: JSONContent): string => {
     if (node.text)
       return (node.marks || []).reduce(
@@ -193,11 +194,19 @@ export function exportHtml(project: Project) {
   };
   const html = `<!doctype html><html lang="zh"><meta charset="utf-8"><title>${escape(project.reportTitle)}</title><style>body{font:16px/1.9 system-ui,sans-serif;color:#303c31;max-width:760px;margin:60px auto;padding:0 24px}h1{font-size:34px}h2{margin-top:2em}blockquote{border-left:3px solid #8aa379;padding-left:20px;color:#687c5d}sup{color:#668649}table{border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px}footer{border-top:1px solid #ddd;margin-top:40px;font-size:13px;white-space:pre-wrap}</style><h1>${escape(project.reportTitle)}</h1><p>${escape(project.description)}</p>${render(project.content)}<footer>${escape(referenceLines(project).join("\n\n"))}</footer></html>`;
   download(
-    new Blob([html], { type: "text/html;charset=utf-8" }),
+    new Blob(
+      [
+        html.replace(
+          '<html lang="zh">',
+          `<html lang="${language === "zh" ? "zh-CN" : "en"}">`,
+        ),
+      ],
+      { type: "text/html;charset=utf-8" },
+    ),
     `${project.reportTitle}.html`,
   );
 }
-export async function exportWord(project: Project) {
+export async function exportWord(project: Project, language: Language = "en") {
   const {
     Document,
     Packer,
@@ -301,7 +310,7 @@ export async function exportWord(project: Project) {
           new Paragraph({ text: project.description, spacing: { after: 400 } }),
           ...blocks(project.content.content || []),
           new Paragraph({
-            text: "参考来源 / Sources",
+            text: language === "zh" ? "参考来源" : "Sources",
             heading: HeadingLevel.HEADING_2,
           }),
           ...referenceLines(project).map(

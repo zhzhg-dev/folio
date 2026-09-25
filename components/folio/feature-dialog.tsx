@@ -19,6 +19,7 @@ import {
   exportBackup,
 } from "@/lib/folio/files";
 import { validateDocument } from "@/lib/folio/integrity";
+import { errorMessage } from "@/lib/folio/i18n";
 import type { Project, Source, Language } from "@/lib/folio/model";
 export default function FeatureDialog({
   kind,
@@ -55,7 +56,7 @@ export default function FeatureDialog({
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e, language));
     } finally {
       setBusy(false);
     }
@@ -143,7 +144,7 @@ export default function FeatureDialog({
           </p>
         </div>
         <p className="small-copy">
-          Folio 0.1 · {t("个人工作空间", "Personal workspace")}
+          Folio 0.2 · {t("个人工作空间", "Personal workspace")}
         </p>
         {error && (
           <p className="inline-error" role="alert">

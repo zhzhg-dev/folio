@@ -42,6 +42,7 @@ export type WorkspaceData = {
   projects: Project[];
   activeId: string;
   language: Language;
+  languagePreferenceVersion?: 1;
 };
 export const uid = () => crypto.randomUUID();
 export const textNode = (text: string): JSONContent => ({ type: "text", text });
@@ -88,7 +89,7 @@ export function makeProject(name: string, language: Language): Project {
     updatedAt: now,
   };
 }
-export function seedWorkspace(): WorkspaceData {
+export function legacySeedWorkspace(): WorkspaceData {
   const now = new Date().toISOString();
   const q1 =
     "工作方式的变化，不只是地点的迁移，更是个人对时间、工具与协作边界的重新安排。";
@@ -204,4 +205,106 @@ export function seedWorkspace(): WorkspaceData {
     activeId: project.id,
     language: "zh",
   };
+}
+
+export function seedWorkspace(): WorkspaceData {
+  const data = legacySeedWorkspace();
+  const project = data.projects[0];
+  const q1 =
+    "Independent work is less about where work happens and more about how people choose to use their time, tools and attention.";
+  const q2 =
+    "In these fictional interviews, creators describe scattered sources, lost context and difficulty tracing the reasoning behind earlier drafts.";
+  const q3 =
+    "A good tool brings you back to the work, instead of becoming more work to maintain.";
+  const sourceCopy = [
+    {
+      name: "The independent work notebook",
+      text: `Fictional sample material, created to demonstrate Folio. This is not published research.\n\n${q1}\n\nIndependent workers move between reading, making and delivering. A lasting project needs to preserve where its ideas came from while leaving room for personal judgment.\n\nThe purpose of a useful tool is to reduce the effort of finding context again.`,
+    },
+    {
+      name: "Conversations with makers",
+      text: `Fictional interview notes, created for this sample project.\n\n${q2}\n\nScenario A: Returning to a draft means reopening several files to recover its context.\nScenario B: A source changes, but the completed report gives no indication of the update.\nScenario C: An AI-written paragraph takes longer to verify than to write.\n\nThe imagined participants want to keep evidence, working notes and finished writing together.`,
+    },
+    {
+      name: "A quieter kind of workspace",
+      text: `Fictional design notes, created for this sample project.\n\n${q3}\n\nA useful workspace keeps sources close to ideas. The next step should feel obvious, and the writer should stay in control.\n\nLocal storage keeps work close. Clear exports provide a way to take it elsewhere.`,
+    },
+  ];
+  project.sources = project.sources.map((s, i) => ({
+    ...s,
+    name: sourceCopy[i].name,
+    versions: [
+      {
+        ...s.versions[0],
+        text: sourceCopy[i].text,
+        pages: [{ page: 1, text: sourceCopy[i].text }],
+        size: new TextEncoder().encode(sourceCopy[i].text).length,
+      },
+    ],
+  }));
+  const paragraph = (
+    text: string,
+    sourceId?: string,
+    quote?: string,
+  ): JSONContent => ({
+    type: "paragraph",
+    content: [
+      { type: "text", text },
+      ...(sourceId
+        ? [
+            {
+              type: "citation",
+              attrs: {
+                sourceId,
+                versionId: `${sourceId}-v1`,
+                page: 1,
+                label: sourceId.slice(1),
+                quote,
+              },
+            },
+          ]
+        : []),
+    ],
+  });
+  project.name = "Independent work";
+  project.reportTitle = "A quieter way to work";
+  project.description =
+    "Notes on attention, good tools, and making room for your own ideas.";
+  project.content = {
+    type: "doc",
+    content: [
+      heading("Work, on your own terms"),
+      paragraph(
+        "When work is no longer defined by a desk, a different question comes into focus: what deserves our attention, and what can we make a little lighter?",
+      ),
+      paragraph(
+        "The shift is about more than moving from an office to a coffee shop. It asks us to be intentional about our time, our tools, and the way scattered information becomes a point of view.",
+        "s1",
+        q1,
+      ),
+      { type: "blockquote", content: [paragraph(q3, "s3", q3)] },
+      heading("From collecting to connecting"),
+      paragraph(
+        "Finding information is often the easy part. A report, a passing observation, a sentence from a conversation — each can be useful, yet each tends to live somewhere different.",
+        "s2",
+        q2,
+      ),
+      paragraph(
+        "Keeping reading and writing in one place offers a starting point. Every important claim can lead back to its source. Every revision can leave a trace. New evidence can challenge an old conclusion without erasing the thinking that came before it.",
+      ),
+      heading("Leave room for the next thought"),
+      {
+        type: "bulletList",
+        content: [
+          "Keep the original source within reach.",
+          "Let suggestions support your judgment.",
+          "Revisit a conclusion when its evidence changes.",
+        ].map((text) => ({ type: "listItem", content: [paragraph(text)] })),
+      },
+      paragraph(
+        "This is a small beginning. Add a source, follow a citation, or turn this page into an observation of your own.",
+      ),
+    ],
+  };
+  return { ...data, language: "en", languagePreferenceVersion: 1 };
 }

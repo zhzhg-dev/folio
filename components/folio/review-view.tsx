@@ -19,7 +19,9 @@ export default function ReviewView({
     <section className="collection-page">
       <div className="collection-header">
         <div>
-          <span className="overline">KEEP YOUR SOURCES IN SIGHT</span>
+          <span className="overline">
+            {t("让来源始终清晰", "KEEP YOUR SOURCES IN SIGHT")}
+          </span>
           <h1>{t("来源更新检查", "Source review")}</h1>
           <p>
             {t(

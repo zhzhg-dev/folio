@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import type { Project, Language } from "@/lib/folio/model";
 import type { Draft } from "@/lib/folio/ai";
+import { errorMessage } from "@/lib/folio/i18n";
 export default function Assistant({
   project,
   language,
@@ -49,7 +50,7 @@ export default function Assistant({
       toast.success(t("本地 AI 已就绪", "Local AI is ready"));
     } catch (e) {
       setStatus("idle");
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e, language));
     }
   };
   const generate = async () => {
@@ -70,7 +71,7 @@ export default function Assistant({
       );
       setDraft(output);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e, language));
     } finally {
       setStatus("ready");
     }

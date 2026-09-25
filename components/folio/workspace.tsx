@@ -27,6 +27,8 @@ import {
   Maximize2,
   ShieldCheck,
   ArrowLeft,
+  Languages,
+  ArrowRight,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -64,6 +66,7 @@ import {
   type Project,
   type Source,
   type SourceVersion,
+  type Language,
 } from "@/lib/folio/model";
 import { loadWorkspace, saveWorkspace } from "@/lib/folio/storage";
 import DocumentEditor from "./document-editor";
@@ -80,6 +83,35 @@ import {
 import { countChanges, citationStatus } from "@/lib/folio/integrity";
 import type { Draft } from "@/lib/folio/ai";
 import { useWebMCP } from "./webmcp";
+import { errorMessage } from "@/lib/folio/i18n";
+
+function EditableText({
+  className,
+  label,
+  value,
+  onChange,
+}: {
+  className: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className={`editable-field ${className}-field`}>
+      <span aria-hidden="true">
+        {value || " "}
+        {"\u200b"}
+      </span>
+      <textarea
+        className={className}
+        aria-label={label}
+        value={value}
+        rows={1}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </div>
+  );
+}
 
 function NavigationContent({ children }: { children: React.ReactNode }) {
   const { setOpenMobile } = useSidebar();
@@ -125,6 +157,13 @@ export default function Workspace() {
     [data.language],
   );
   const onReady = useCallback((e: Editor) => setEditor(e), []);
+  const changeLanguage = useCallback((language: Language) => {
+    setData((current) => ({
+      ...current,
+      language,
+      languagePreferenceVersion: 1,
+    }));
+  }, []);
   useEffect(() => {
     loadWorkspace()
       .then((v) => {
@@ -132,7 +171,9 @@ export default function Workspace() {
         setLoaded(true);
       })
       .catch(() => {
-        toast.error("无法读取本地数据，请检查浏览器存储权限");
+        toast.error(
+          "Could not open local storage. Check your browser permissions.",
+        );
         setSaving("error");
       });
   }, []);
@@ -148,7 +189,7 @@ export default function Workspace() {
           setSaving("error");
           toast.error(
             error instanceof Error
-              ? error.message
+              ? errorMessage(error, data.language)
               : t(
                   "保存失败，请导出备份",
                   "Save failed. Please export a backup.",
@@ -167,6 +208,10 @@ export default function Workspace() {
   }, []);
   useEffect(() => {
     document.documentElement.lang = data.language === "zh" ? "zh-CN" : "en";
+    document.title =
+      data.language === "zh"
+        ? "Folio · 给想法留一点空间"
+        : "Folio — A quieter place for your ideas";
   }, [data.language]);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -397,12 +442,12 @@ export default function Workspace() {
   };
   const runExport = async (format: "word" | "html" | "backup") => {
     try {
-      if (format === "word") await exportWord(project);
-      if (format === "html") exportHtml(project);
+      if (format === "word") await exportWord(project, data.language);
+      if (format === "html") exportHtml(project, data.language);
       if (format === "backup") await exportBackup(project);
       toast.success(t("导出完成", "Export complete"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(errorMessage(e, data.language));
     }
   };
   useWebMCP(project, data.projects, (id) => {
@@ -414,7 +459,14 @@ export default function Workspace() {
     project.content.content
       ?.filter((n) => n.type === "heading")
       .map((n) => plainText(n)) || [];
-  const wordCount = plainText(project.content).replace(/\s/g, "").length;
+  const documentText = plainText(project.content).replace(/\[\d+\]/g, "");
+  const isChineseDocument =
+    (documentText.match(/[\u4e00-\u9fff]/g) || []).length /
+      Math.max(1, documentText.length) >
+    0.2;
+  const wordCount = isChineseDocument
+    ? documentText.replace(/\s/g, "").length
+    : (documentText.match(/[\p{L}\p{N}]+(?:['’][\p{L}]+)*/gu) || []).length;
   const createProject = () => {
     if (!newName.trim()) return;
     const next = makeProject(newName.trim(), data.language);
@@ -429,33 +481,38 @@ export default function Workspace() {
     setView("editor");
   };
   const downloadMarkdown = () => {
-    exportMarkdown(project);
+    exportMarkdown(project, data.language);
     toast.success(t("已导出 Markdown", "Markdown exported"));
   };
   const formatting = [
     {
       Icon: Bold,
-      label: "加粗 / Bold",
+      label: t("加粗", "Bold"),
+      active: "bold",
       run: () => editor?.chain().focus().toggleBold().run(),
     },
     {
       Icon: Italic,
-      label: "斜体 / Italic",
+      label: t("斜体", "Italic"),
+      active: "italic",
       run: () => editor?.chain().focus().toggleItalic().run(),
     },
     {
       Icon: List,
-      label: "项目列表 / Bullet list",
+      label: t("项目列表", "Bullet list"),
+      active: "bulletList",
       run: () => editor?.chain().focus().toggleBulletList().run(),
     },
     {
       Icon: ListOrdered,
-      label: "有序列表 / Numbered list",
+      label: t("有序列表", "Numbered list"),
+      active: "orderedList",
       run: () => editor?.chain().focus().toggleOrderedList().run(),
     },
     {
       Icon: Quote,
-      label: "引用段落 / Block quote",
+      label: t("引用段落", "Block quote"),
+      active: "blockquote",
       run: () => editor?.chain().focus().toggleBlockquote().run(),
     },
   ];
@@ -467,13 +524,13 @@ export default function Workspace() {
         <p>
           {saving === "error"
             ? "无法打开本地存储，请检查浏览器权限后刷新。 / Storage unavailable. Check browser permissions and reload."
-            : "正在打开工作空间 / Opening your workspace"}
+            : "Opening your workspace…"}
         </p>
       </main>
     );
   return (
     <SidebarProvider
-      style={{ "--sidebar-width": "232px" } as React.CSSProperties}
+      style={{ "--sidebar-width": "228px" } as React.CSSProperties}
       className={`folio-app ${focus ? "is-focused" : ""}`}
     >
       <Sidebar className="folio-sidebar" collapsible="offcanvas">
@@ -486,22 +543,41 @@ export default function Workspace() {
             }}
           >
             <span className="brand-mark">
-              <BookOpen size={20} strokeWidth={1.7} />
+              <svg
+                viewBox="0 0 32 32"
+                width="28"
+                height="28"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 6.5h8.5c4.9 0 8 2.1 8 6.2v12.8H15c-4.9 0-8-2.1-8-6.2V6.5Z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M12 11h8M12 15h8M12 19h5"
+                  stroke="var(--logo-paper, #faf9f5)"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+              </svg>
             </span>
             <span>
-              folio<span className="brand-period">.</span>
+              Folio<span className="brand-period">.</span>
             </span>
           </button>
           <button className="workspace-switch" onClick={() => setDialog("new")}>
-            <span className="workspace-avatar">F</span>
-            {t("个人工作空间", "Personal workspace")}
+            <span className="workspace-avatar">
+              <span />
+            </span>
+            {t("个人空间", "Personal space")}
             <ChevronDown size={14} />
           </button>
         </SidebarHeader>
         <NavigationContent>
           <button className="search-button" onClick={() => setDialog("search")}>
             <Search size={16} />
-            <span>{t("快速查找", "Quick search")}</span>
+            <span>{t("搜索资料与想法", "Find anything")}</span>
             <kbd>⌘ K</kbd>
           </button>
           <nav className="main-nav" aria-label={t("主导航", "Main navigation")}>
@@ -510,7 +586,7 @@ export default function Workspace() {
               onClick={() => setView("editor")}
             >
               <FileText size={18} />
-              {t("写作工作台", "Workspace")}
+              {t("写作工作台", "Writing desk")}
               <span className="nav-dot" />
             </button>
             <button
@@ -559,9 +635,13 @@ export default function Workspace() {
                   setView("editor");
                 }}
               >
-                <span className="project-dot" />
+                <span className="project-dot">
+                  <BookOpen size={13} />
+                </span>
                 <span>{p.name}</span>
-                {p.id === project.id && <ChevronDown size={13} />}
+                {p.id === project.id && (
+                  <span className="project-selected-dot" />
+                )}
               </button>
             ))}
           </div>
@@ -604,14 +684,33 @@ export default function Workspace() {
           </button>
         </NavigationContent>
         <SidebarFooter className="sidebar-bottom">
+          <div
+            className="language-switch"
+            role="group"
+            aria-label={t("界面语言", "Interface language")}
+          >
+            <Languages size={14} aria-hidden="true" />
+            <button
+              aria-pressed={data.language === "en"}
+              onClick={() => changeLanguage("en")}
+            >
+              English
+            </button>
+            <button
+              aria-pressed={data.language === "zh"}
+              onClick={() => changeLanguage("zh")}
+            >
+              中文
+            </button>
+          </div>
           <div className="local-note">
             <ShieldCheck size={16} />
             <div>
               <strong>{t("留在你的设备上", "On your device")}</strong>
               <span>
                 {t(
-                  "私密、自在，无需登录",
-                  "Private. Yours. No account needed.",
+                  "资料始终留在你的浏览器",
+                  "Your work stays in this browser.",
                 )}
               </span>
             </div>
@@ -623,7 +722,7 @@ export default function Workspace() {
             <span className="profile-avatar">F</span>
             <span>
               {t("我的工作空间", "My workspace")}
-              <small>{t("本地模式", "Local mode")}</small>
+              <small>{t("偏好与备份", "Preferences & backups")}</small>
             </span>
             <Settings2 size={17} />
           </button>
@@ -633,11 +732,11 @@ export default function Workspace() {
         <header className="topbar">
           <div className="breadcrumbs">
             <SidebarTrigger className="sidebar-toggle" />
-            <span>{t("工作空间", "Workspace")}</span>
+            <span>{t("项目", "Projects")}</span>
             <ChevronRight size={13} />
             <strong>{project.name}</strong>
             {project.example && (
-              <span className="example-label">{t("示例", "Example")}</span>
+              <span className="example-label">{t("示例", "Sample")}</span>
             )}
           </div>
           <div className="top-actions">
@@ -652,9 +751,8 @@ export default function Workspace() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="export-button">
-                  <Download size={15} />
                   {t("导出", "Export")}
-                  <ChevronDown size={13} />
+                  <ArrowUpRight size={14} />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -710,11 +808,14 @@ export default function Workspace() {
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <i />
-                {formatting.map(({ Icon, label, run }) => (
+                {formatting.map(({ Icon, label, run, active }) => (
                   <button
                     key={label}
                     title={label}
                     aria-label={label}
+                    aria-pressed={
+                      !!editor && !editor.isDestroyed && editor.isActive(active)
+                    }
                     onClick={run}
                   >
                     <Icon size={16} />
@@ -723,14 +824,14 @@ export default function Workspace() {
                 <i />
                 <button
                   aria-label={t("撤销", "Undo")}
-                  title="Undo"
+                  title={t("撤销", "Undo")}
                   onClick={() => editor?.chain().focus().undo().run()}
                 >
                   <Undo2 size={16} />
                 </button>
                 <button
                   aria-label={t("重做", "Redo")}
-                  title="Redo"
+                  title={t("重做", "Redo")}
                   onClick={() => editor?.chain().focus().redo().run()}
                 >
                   <Redo2 size={16} />
@@ -741,6 +842,7 @@ export default function Workspace() {
                   onClick={() => setFocus(!focus)}
                   title={t("专注模式", "Focus mode")}
                   aria-label={t("专注模式", "Focus mode")}
+                  aria-pressed={focus}
                 >
                   <Maximize2 size={16} />
                 </button>
@@ -748,22 +850,29 @@ export default function Workspace() {
                   onClick={() => setRightOpen(!rightOpen)}
                   title={t("参考资料面板", "Sources panel")}
                   aria-label={t("参考资料面板", "Sources panel")}
+                  aria-pressed={rightOpen}
+                  className="panel-trigger"
                 >
                   {rightOpen ? (
                     <PanelRightClose size={17} />
                   ) : (
                     <PanelRightOpen size={17} />
                   )}
+                  <span>{t("资料", "Sources")}</span>
                 </button>
               </div>
             </div>
             <div className="work-area">
               <div className="document-scroll">
-                <article className="paper">
+                <article
+                  className="paper"
+                  data-writing-language={isChineseDocument ? "zh" : "en"}
+                  lang={isChineseDocument ? "zh-CN" : "en"}
+                >
                   <div className="document-eyebrow">
                     <span className="document-type">
                       <span />
-                      {t("研究简报", "RESEARCH NOTE")}
+                      {t("研究笔记", "FIELD NOTES")}
                     </span>
                     <span className="draft-label">{t("草稿", "Draft")}</span>
                     <button
@@ -773,25 +882,21 @@ export default function Workspace() {
                       <MoreHorizontal size={20} />
                     </button>
                   </div>
-                  <input
+                  <EditableText
                     className="document-title"
-                    aria-label={t("报告标题", "Report title")}
+                    label={t("报告标题", "Report title")}
                     value={project.reportTitle}
-                    onChange={(e) =>
-                      updateProject({ reportTitle: e.target.value })
-                    }
+                    onChange={(value) => updateProject({ reportTitle: value })}
                   />
-                  <input
+                  <EditableText
                     className="document-description"
-                    aria-label={t("报告简介", "Report description")}
+                    label={t("报告简介", "Report description")}
                     value={project.description}
-                    onChange={(e) =>
-                      updateProject({ description: e.target.value })
-                    }
+                    onChange={(value) => updateProject({ description: value })}
                   />
                   <div className="document-meta">
                     <span className="author-avatar">F</span>
-                    <span>{t("我的文档", "My document")}</span>
+                    <span>{t("我的笔记", "Personal research")}</span>
                     <span>·</span>
                     <span>
                       {new Date(project.createdAt).toLocaleDateString(
@@ -802,7 +907,10 @@ export default function Workspace() {
                     <span>·</span>
                     <span>
                       {t("约 ", "About ")}
-                      {Math.max(1, Math.ceil(wordCount / 400))}
+                      {Math.max(
+                        1,
+                        Math.ceil(wordCount / (isChineseDocument ? 400 : 220)),
+                      )}
                       {t(" 分钟阅读", " min read")}
                     </span>
                   </div>
@@ -871,9 +979,7 @@ export default function Workspace() {
                       ) : (
                         <>
                           <div className="panel-heading">
-                            <span>
-                              {t("这个项目里的资料", "IN THIS PROJECT")}
-                            </span>
+                            <span>{t("项目资料", "YOUR SOURCE MATERIAL")}</span>
                             <button
                               aria-label={t("添加资料", "Add source")}
                               onClick={() => setDialog("import")}
@@ -895,8 +1001,7 @@ export default function Workspace() {
                                   <strong>{s.name}</strong>
                                   <span>
                                     {s.kind.toUpperCase()}
-                                    <span>·</span>
-                                    {t("文本资料", "Text source")}
+                                    <span>·</span>v{s.versions.length}
                                   </span>
                                 </div>
                                 <ChevronRight size={14} />
@@ -909,6 +1014,7 @@ export default function Workspace() {
                           >
                             <Plus size={16} />
                             {t("添加资料", "Add a source")}
+                            <ArrowRight size={14} />
                           </button>
                           <div className="panel-divider" />
                           <div className="panel-heading">
@@ -971,10 +1077,19 @@ export default function Workspace() {
                 {t("本地工作空间", "Local workspace")}
               </div>
               <span>
-                {wordCount.toLocaleString()} {t("字", "characters")}
+                {wordCount.toLocaleString()}{" "}
+                {isChineseDocument ? t("字", "characters") : t("词", "words")}
                 <i /> {project.sources.length} {t("份资料", "sources")}
                 <i />
-                {t("中文 / EN", "EN / 中文")}
+                <button
+                  className="status-language"
+                  onClick={() =>
+                    changeLanguage(data.language === "en" ? "zh" : "en")
+                  }
+                  aria-label={t("切换为英文", "Switch to Chinese")}
+                >
+                  {data.language === "en" ? "EN" : "中文"}
+                </button>
               </span>
             </footer>
           </>
@@ -997,8 +1112,8 @@ export default function Workspace() {
               <div>
                 <span className="overline">
                   {view === "library"
-                    ? "YOUR KNOWLEDGE, TOGETHER"
-                    : "EVERY THOUGHT HAS A HISTORY"}
+                    ? t("让知识汇聚", "YOUR KNOWLEDGE, TOGETHER")
+                    : t("想法的每一步", "EVERY THOUGHT HAS A HISTORY")}
                 </span>
                 <h1>
                   {view === "library"
