@@ -20,7 +20,10 @@ function interrupted(reason?: ReleaseReason) {
 
 function untilAborted<T>(task: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise((resolve, reject) => {
-    const abort = () => reject(signal.reason || interrupted());
+    const abort = () => {
+      signal.removeEventListener("abort", abort);
+      reject(signal.reason || interrupted());
+    };
     if (signal.aborted) {
       abort();
       task.catch(() => {});

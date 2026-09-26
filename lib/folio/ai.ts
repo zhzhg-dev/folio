@@ -51,10 +51,17 @@ export function subscribeModel(listener: (state: ModelState) => void) {
   return session.subscribe(listener);
 }
 if (typeof document !== "undefined") {
-  document.addEventListener("visibilitychange", () => {
+  const hidden = () => {
     if (document.hidden) session.release("hidden");
+  };
+  const leave = () => session.release("navigation");
+  document.addEventListener("visibilitychange", hidden);
+  window.addEventListener("pagehide", leave);
+  import.meta.hot?.dispose(() => {
+    leave();
+    document.removeEventListener("visibilitychange", hidden);
+    window.removeEventListener("pagehide", leave);
   });
-  window.addEventListener("pagehide", () => session.release("navigation"));
 }
 export async function generateAnswer(
   project: Project,

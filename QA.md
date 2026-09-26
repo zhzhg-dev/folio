@@ -3,6 +3,7 @@
 ## 0.3.2 recovery and task lifecycle
 
 - Model session tests cover single initialization, cancellation before/during setup, hung generation cancellation, concurrent request rejection, old results arriving after replacement, timeout cleanup and idle release.
+- Development hot updates explicitly release the previous AI session and remove its page listeners; development GPU behavior itself was not re-run.
 - Recovery exports use the same format as normal backup. A binary fixture spanning multiple base64 chunks round-trips with byte-identical originals and retained research/reading state. Cancellation stops further reads, and a mocked worker verifies termination.
 - Storage recovery reads the existing `workspaces/main` row in a read-only transaction, aborts attempted creation of a missing database, and refuses malformed project indexes without writing.
 - The transpiled startup entry is tested for no eager workspace import, timeout fallback and rejection of a late import after failure. This is a script-level test, not evidence that a blocked host process can be recovered.
