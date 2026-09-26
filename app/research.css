@@ -635,10 +635,29 @@ html[lang="zh-CN"] .research-empty h2 {
   background: #eeefe9;
   overscroll-behavior: contain;
 }
-.pdf-reader { min-width: 0; max-width: 100%; }
-.model-session-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 32px 12px; padding: 12px 0; border-bottom: 1px solid #e4e6df; font-size: 14px; color: #60635f; }
-.model-session-bar button { flex-shrink: 0; }
-.model-release-note { margin: 0 32px 12px; font-size: 14px; color: #60635f; }
+.pdf-reader {
+  min-width: 0;
+  max-width: 100%;
+}
+.model-session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 32px 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e4e6df;
+  font-size: 14px;
+  color: #60635f;
+}
+.model-session-bar button {
+  flex-shrink: 0;
+}
+.model-release-note {
+  margin: 0 32px 12px;
+  font-size: 14px;
+  color: #60635f;
+}
 .pdf-sheet {
   position: relative;
   background: #fff;
@@ -777,5 +796,242 @@ html[lang="zh-CN"] .research-empty h2 {
   }
   .research-header .overline {
     font-size: 12px;
+  }
+}
+/* The research trail is a quiet part of the workspace, not a dashboard. */
+.project-guide {
+  margin: 0 28px;
+  border-bottom: 1px solid #e0e4d9;
+  flex-shrink: 0;
+  color: #56634c;
+}
+.project-guide > summary,
+.evidence-review > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+  list-style: none;
+}
+.project-guide > summary::-webkit-details-marker,
+.evidence-review > summary::-webkit-details-marker {
+  display: none;
+}
+.project-guide > summary {
+  font-size: 12px;
+  padding: 11px 0;
+}
+.project-guide > summary > span:last-child,
+.evidence-review > summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.project-guide[open] > summary svg,
+.evidence-review[open] > summary > span:last-child svg {
+  transform: rotate(180deg);
+}
+.guide-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  padding: 12px 0 17px;
+}
+.guide-steps > button {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0;
+}
+.guide-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: 1px solid #d5dccd;
+  border-radius: 50%;
+  font-size: 11px;
+}
+.guide-number.is-done {
+  background: #e4eadc;
+  border-color: #e4eadc;
+  color: #506642;
+}
+.guide-steps strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 550;
+  margin: 3px 0 6px;
+  color: #35482b;
+}
+.guide-steps small {
+  display: block;
+  font-size: 12px;
+  color: #73796d;
+  line-height: 1.7;
+}
+.guide-steps button:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.guide-backup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-top: 1px solid #e6e9df;
+  padding: 12px 0 16px;
+}
+.guide-backup p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #73796d;
+  margin: 0;
+  max-width: 650px;
+}
+.guide-backup button {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.evidence-review {
+  margin-top: 20px;
+  border: 1px solid #dfe5d6;
+  border-radius: 10px;
+  background: #fafbf7;
+}
+.evidence-review > summary {
+  padding: 13px 15px;
+  font-size: 13px;
+  color: #4b5f3f;
+}
+.evidence-review > summary > span:last-child {
+  color: #757d6d;
+  font-size: 12px;
+}
+.evidence-review-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #859871;
+}
+.evidence-review-body {
+  padding: 0 16px 16px;
+}
+.ledger-caption {
+  color: #707868;
+  line-height: 1.75;
+  font-size: 12px;
+  margin: 0 0 15px;
+}
+.ledger-caption:last-child {
+  margin: 15px 0 0;
+}
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 18px;
+}
+.evidence-source-group {
+  min-width: 0;
+}
+.evidence-source-group h3 {
+  color: #35482c;
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+  padding: 0 0 10px;
+  margin: 0;
+  border-bottom: 1px solid #dfe5d7;
+}
+.ledger-passage {
+  padding-top: 13px;
+}
+.ledger-location {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #7b826f;
+}
+.ledger-passage blockquote {
+  font-family: "Newsreader Variable", var(--font-sans);
+  font-size: 17px;
+  line-height: 1.65;
+  margin: 10px 0 14px;
+  color: #46503e;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+html[lang="zh-CN"] .ledger-passage blockquote {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.9;
+}
+.ledger-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 15px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e4e8de;
+}
+.ledger-actions .text-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+.review-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #dce3d3;
+  border-radius: 5px;
+  padding: 4px 7px;
+  font-size: 12px;
+  color: #718066;
+  background: #fff;
+}
+.review-toggle.is-reviewed {
+  color: #425c33;
+  background: #e9efdf;
+  border-color: #cbd9be;
+}
+.history-more {
+  display: block;
+  margin: 20px auto 0;
+  font-size: 12px;
+}
+@media (max-width: 767px) {
+  .project-guide {
+    margin: 0 20px;
+  }
+  .guide-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+  }
+  .guide-backup {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .evidence-review > summary {
+    padding: 12px;
+  }
+  .evidence-review-body {
+    padding: 0 12px 12px;
+  }
+}
+@media print {
+  .project-guide {
+    display: none;
   }
 }

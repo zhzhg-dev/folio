@@ -9,14 +9,9 @@ import {
 } from "./model.ts";
 import type { JSONContent } from "@tiptap/react";
 import { validResearch } from "./research.ts";
-import { prepareBackup } from "./backup-export.ts";
+import { prepareBackup, saveDownload } from "./backup-export.ts";
 export function download(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name.replace(/[<>:"/\\|?*]/g, "-");
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  saveDownload(blob, name);
 }
 export async function hashBytes(bytes: ArrayBuffer) {
   return Array.from(

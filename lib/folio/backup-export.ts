@@ -51,11 +51,38 @@ export function prepareBackup(
   });
 }
 
+let closeDownload: (() => void) | undefined;
+import.meta.hot?.dispose(() => closeDownload?.());
 export function saveDownload(blob: Blob, name: string) {
+  closeDownload?.();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = name.replace(/[<>:"/\\|?*]/g, "-");
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  const zh = document.documentElement.lang.startsWith("zh");
+  const notice = document.createElement("aside");
+  notice.className = "download-notice";
+  notice.setAttribute("role", "status");
+  const label = document.createElement("strong");
+  label.textContent = zh ? "文件已准备好" : "Your file is ready";
+  const filename = document.createElement("span");
+  filename.textContent = a.download;
+  a.textContent = zh ? "保存文件" : "Save file";
+  const close = document.createElement("button");
+  close.textContent = zh ? "关闭" : "Dismiss";
+  const dispose = () => {
+    notice.remove();
+    URL.revokeObjectURL(url);
+    window.removeEventListener("pagehide", dispose);
+    if (closeDownload === dispose) closeDownload = undefined;
+  };
+  close.addEventListener("click", dispose);
+  closeDownload = dispose;
+  window.addEventListener("pagehide", dispose, { once: true });
+  notice.append(label, filename, a, close);
+  // A visible, user-activated link works after asynchronous preparation, too.
+  (
+    document.querySelector('[role="dialog"][data-state="open"]') ||
+    document.body
+  ).append(notice);
 }

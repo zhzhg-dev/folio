@@ -1,6 +1,7 @@
 import type { WebWorkerMLCEngine } from "@mlc-ai/web-llm";
 import type { Project, Language, ResearchTurn } from "./model";
-import { findPassages, parseAnswer } from "./research";
+import { parseAnswer } from "./research";
+import { findPassagesAsync } from "./research-task";
 import {
   ModelSession,
   type ModelState,
@@ -69,8 +70,16 @@ export async function generateAnswer(
   sourceIds: string[],
   language: Language,
   previousQuestion?: string,
+  signal?: AbortSignal,
 ): Promise<ResearchTurn> {
-  const turn = findPassages(project, question, sourceIds, previousQuestion);
+  const turn = await findPassagesAsync(
+    project,
+    question,
+    sourceIds,
+    previousQuestion,
+    signal,
+  );
+  signal?.throwIfAborted();
   if (!turn.evidence.length) return { ...turn, mode: "answer" };
   const schema = JSON.stringify({
     type: "object",

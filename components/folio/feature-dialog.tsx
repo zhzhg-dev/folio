@@ -108,7 +108,12 @@ export default function FeatureDialog({
             onClick={() =>
               perform(async () => {
                 await exportBackup(project);
-                toast.success(t("备份已导出", "Backup exported"));
+                toast.success(
+                  t(
+                    "备份已准备好，请保存文件",
+                    "Backup ready. Save the file below",
+                  ),
+                );
               })
             }
           >
@@ -144,7 +149,7 @@ export default function FeatureDialog({
           </p>
         </div>
         <p className="small-copy">
-          Folio 0.3.2 · {t("个人工作空间", "Personal workspace")}
+          Folio 0.4.0 · {t("个人工作空间", "Personal workspace")}
         </p>
         {error && (
           <p className="inline-error" role="alert">

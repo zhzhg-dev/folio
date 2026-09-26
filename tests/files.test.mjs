@@ -13,16 +13,29 @@ import { makeProject } from "../lib/folio/model.ts";
 import { findPassages } from "../lib/folio/research.ts";
 let captured;
 const oldDocument = globalThis.document;
+const oldWindow = globalThis.window;
 const oldCreate = URL.createObjectURL;
 globalThis.document = {
-  createElement: () => ({ click() {}, href: "", download: "" }),
+  createElement: () => ({
+    append() {},
+    remove() {},
+    addEventListener() {},
+    setAttribute() {},
+    href: "",
+    download: "",
+  }),
+  documentElement: { lang: "en" },
+  querySelector: () => null,
+  body: { append() {} },
 };
+globalThis.window = { addEventListener() {}, removeEventListener() {} };
 URL.createObjectURL = (blob) => {
   captured = blob;
   return "blob:folio-test";
 };
 test.after(() => {
   globalThis.document = oldDocument;
+  globalThis.window = oldWindow;
   URL.createObjectURL = oldCreate;
 });
 async function fixture() {

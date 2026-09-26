@@ -31,7 +31,12 @@ export function findPassages(
   previousQuestion?: string,
 ): ResearchTurn {
   const retrievalQuery = contextualQuery(question, previousQuestion);
-  const evidence = retrieve(project, retrievalQuery, ids);
+  const evidence = retrieve(
+    project,
+    question,
+    ids,
+    retrievalQuery !== question ? previousQuestion : undefined,
+  );
   return {
     id: uid(),
     question,
@@ -52,6 +57,8 @@ export function parseAnswer(
     raw.replace(/<think>[\s\S]*?<\/think>/g, "").trim(),
   );
   if (
+    !parsed ||
+    typeof parsed !== "object" ||
     !["answered", "insufficient", "conflicting"].includes(parsed.status) ||
     !Array.isArray(parsed.paragraphs) ||
     parsed.paragraphs.length > 6
@@ -65,6 +72,8 @@ export function parseAnswer(
     throw new Error("回答内容为空 / The answer was empty.");
   for (const p of parsed.paragraphs) {
     if (
+      !p ||
+      typeof p !== "object" ||
       typeof p.text !== "string" ||
       !p.text.trim() ||
       p.text.length > 4000 ||
@@ -172,6 +181,14 @@ export function validResearch(value: unknown): value is ResearchState {
             Number.isInteger(e.page) &&
             e.page > 0,
         ) &&
+        (t.reviewedEvidenceIds === undefined ||
+          (Array.isArray(t.reviewedEvidenceIds) &&
+            t.reviewedEvidenceIds.length <= t.evidence.length &&
+            new Set(t.reviewedEvidenceIds).size ===
+              t.reviewedEvidenceIds.length &&
+            t.reviewedEvidenceIds.every((id) =>
+              t.evidence.some((e) => e.id === id),
+            ))) &&
         Array.isArray(t.paragraphs) &&
         t.paragraphs.length <= 20 &&
         t.paragraphs.every(

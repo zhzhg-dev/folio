@@ -24,11 +24,9 @@ import type {
   ResearchState,
   ResearchTurn,
 } from "@/lib/folio/model";
-import {
-  findPassages,
-  initialResearch,
-  evidenceExists,
-} from "@/lib/folio/research";
+import { initialResearch, evidenceExists } from "@/lib/folio/research";
+import { findPassagesAsync } from "@/lib/folio/research-task";
+import EvidenceReview from "./evidence-review";
 import { errorMessage } from "@/lib/folio/i18n";
 import {
   loadModel,
@@ -44,12 +42,14 @@ function AnswerCard({
   language,
   onEvidence,
   onAdopt,
+  onReview,
 }: {
   turn: ResearchTurn;
   project: Project;
   language: Language;
   onEvidence: (e: Evidence) => void;
   onAdopt: (draft: Draft) => boolean;
+  onReview: (ids: string[]) => void;
 }) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
   const [selection, setSelection] = useState<number[]>([]);
@@ -212,6 +212,13 @@ function AnswerCard({
           </div>
         </>
       )}
+      <EvidenceReview
+        turn={turn}
+        project={project}
+        language={language}
+        onEvidence={onEvidence}
+        onReview={onReview}
+      />
       {turn.mode === "answer" && turn.status !== "insufficient" && (
         <p className="answer-footnote">
           {t(
@@ -248,6 +255,8 @@ export default function Assistant({
   const [error, setError] = useState("");
   const [supported, setSupported] = useState(true);
   const [released, setReleased] = useState<ReleaseReason>();
+  const [visibleTurns, setVisibleTurns] = useState(12);
+  const searchAbort = useRef<AbortController | null>(null);
   const sequence = useRef(0);
   const running = useRef(false);
   const alive = useRef(true);
@@ -267,6 +276,7 @@ export default function Assistant({
     return () => {
       alive.current = false;
       sequence.current++;
+      searchAbort.current?.abort();
       unsubscribe();
       unloadModel("navigation");
     };
@@ -295,6 +305,9 @@ export default function Assistant({
     const question = research.question.trim();
     if (!question || !selected.length || busy) return;
     const request = ++sequence.current;
+    searchAbort.current?.abort();
+    const controller = new AbortController();
+    searchAbort.current = controller;
     setBusy(true);
     running.current = true;
     setError("");
@@ -310,8 +323,15 @@ export default function Assistant({
               selected,
               language,
               previous,
+              controller.signal,
             )
-          : findPassages(project, question, selected, previous);
+          : await findPassagesAsync(
+              project,
+              question,
+              selected,
+              previous,
+              controller.signal,
+            );
       if (alive.current && sequence.current === request)
         patch({
           turns: [...state.current.turns, output],
@@ -330,6 +350,7 @@ export default function Assistant({
   };
   const cancel = () => {
     sequence.current++;
+    searchAbort.current?.abort();
     unloadModel();
     running.current = false;
     setBusy(false);
@@ -528,7 +549,16 @@ export default function Assistant({
             )}
           </div>
         )}
-        {research.turns.map((turn) => (
+        {research.turns.length > visibleTurns && (
+          <button
+            className="history-more text-action"
+            onClick={() => setVisibleTurns((n) => n + 12)}
+          >
+            {t("显示更早的记录", "Show earlier questions")} ·{" "}
+            {research.turns.length - visibleTurns}
+          </button>
+        )}
+        {research.turns.slice(-visibleTurns).map((turn) => (
           <AnswerCard
             key={turn.id}
             turn={turn}
@@ -536,6 +566,15 @@ export default function Assistant({
             language={language}
             onEvidence={onEvidence}
             onAdopt={onAdopt}
+            onReview={(ids) =>
+              patch({
+                turns: state.current.turns.map((current) =>
+                  current.id === turn.id
+                    ? { ...current, reviewedEvidenceIds: ids }
+                    : current,
+                ),
+              })
+            }
           />
         ))}
         {busy && (
@@ -547,6 +586,14 @@ export default function Assistant({
         <div ref={end} />
       </div>
       <div className="research-composer">
+        {!selected.length && project.sources.length > 0 && (
+          <p className="inline-error">
+            {t(
+              "先在上方选择至少一份资料。",
+              "Select at least one source above to begin.",
+            )}
+          </p>
+        )}
         {error && (
           <p role="alert" className="inline-error">
             {error}

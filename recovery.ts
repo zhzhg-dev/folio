@@ -57,7 +57,7 @@ export async function mountRecoveryBackups(
           });
           saveDownload(blob, `${project.name}.folio.json`);
           status.textContent =
-            "Download requested. Check your downloads. / 已请求下载，请检查下载列表。";
+            "File ready. Use Save file below. / 文件已准备好，请点击保存文件。";
         } catch {
           status.textContent = controller.signal.aborted
             ? "Canceled. Saved data is unchanged. / 已取消，已保存资料未修改。"

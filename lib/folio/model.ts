@@ -21,6 +21,7 @@ export type ResearchTurn = Draft & {
   mode: "passages" | "answer";
   status: "answered" | "insufficient" | "conflicting";
   createdAt: string;
+  reviewedEvidenceIds?: string[];
 };
 export type ReadingPosition = {
   sourceId: string;

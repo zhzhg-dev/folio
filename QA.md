@@ -1,4 +1,15 @@
-# Folio 0.3.2 verification
+# Folio verification
+
+## 0.4 research quality and guided workflow — 2026-09-26
+
+- 54 automated tests plus a separate 40-case retrieval evaluation. Baseline 30/40; current 40/40 on development fixtures (not held-out). See EVALUATION.md for scoring and limits. New tests include search worker cancellation/error/deadline/late-result behavior, lean source payloads, topic-specific summary rejection, follow-up topic changes, manual review backup round trips, malformed model objects and download blob cleanup.
+- In the Windows embedded browser, created a new test project and imported a two-page fictional PDF plus a text revision. Passage search returned original and revised prices with correct pages. Opened PDF page 2, loaded the actual canvas/highlights, then closed the preview to free resources.
+- Marked the first passage reviewed; selected it and added it to the document with its citation. The guide advanced from 0/4 to 4/4. Review marks survived view changes. A separately generated valid backup fixture restored through the normal file picker into a new project with its writing, citation, question and 1/1 reviewed mark. This fixture restore is not a browser-download round trip.
+- Manually loaded Qwen3 and asked “Compare the subscription prices. Explain the revision.” It returned one cited sentence: the subscription was revised from 12 dollars per month to 18 dollars per month. The citation points to the revision text. This one successful answer is not a conflict/answer-quality benchmark. Explicitly turned AI off afterwards.
+- Chinese UI query “年度预算是多少？” returned the English 4800 and 7200 dollar passages. At 390×844 the document width was exactly 390px; at 1440×1000 evidence groups use side-by-side columns. Keyboard operation was used for the workflow controls.
+- The production build was served on the same localhost port and reloaded successfully in normal startup mode. Existing research and manual review marks persisted. A new “What is the Atlas CEO salary?” query returned Not enough evidence through the bundled worker. Entry remains 5.15 KB with no static workspace import; recovery imports only its backup helper.
+- No application warning/error appeared in the inspected browser console. Safe startup and the controlled workflow did not reproduce the reported full-client freeze. One 10-second host-process sample showed a highest individual process CPU use of 11.56% of one core, during ongoing interaction; it is not a per-tab performance trace or proof that the original issue is fixed.
+- Export preparation completes. The previous detached asynchronous download was replaced with a visible, user-activated Save file link and accurate “file ready” wording. In this embedded browser both the automated download wait and an explicit link activation failed to return a completed download event. No actual saved backup from this session was verified. The ready link and Blob lifecycle are checked, backup serialization/restoration is covered in automated tests; host download interoperability remains open.
 
 ## 0.3.2 recovery and task lifecycle
 

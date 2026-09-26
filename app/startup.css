@@ -83,3 +83,59 @@
 body:has(> #root > .startup) {
   margin: 0;
 }
+.download-notice {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 90;
+  width: min(380px, calc(100vw - 32px));
+  padding: 18px 20px;
+  border: 1px solid #cdd7c4;
+  border-radius: 12px;
+  background: #fdfefa;
+  color: #34442b;
+  box-shadow: 0 8px 35px #20301426;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 9px 20px;
+  font:
+    13px/1.6 system-ui,
+    sans-serif;
+}
+.download-notice strong,
+.download-notice span {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+.download-notice strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.download-notice span {
+  color: #78806f;
+}
+.download-notice a {
+  font-weight: 550;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.download-notice button {
+  color: #73796b;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  font: inherit;
+}
+[role="dialog"] .download-notice {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  width: 100%;
+  margin-top: 15px;
+  box-shadow: none;
+}
+@media print {
+  .download-notice {
+    display: none;
+  }
+}

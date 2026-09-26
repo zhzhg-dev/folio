@@ -8,7 +8,15 @@ A local-first research and writing workspace. Bring your sources together, write
 
 Folio opens in English. Switch between **English / 中文** in the sidebar or the mobile footer; your preference is remembered. Changing the interface language never translates or overwrites your writing.
 
-> **0.3 working preview.** Research, evidence review, and writing work together. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+> **0.4 working preview.** Research, evidence review, and writing work together. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+
+## New in 0.4
+
+- An evidence ledger groups passages by source and retains your own review checkmarks in backups.
+- A compact project guide connects collecting, asking, reviewing, writing and backup.
+- Search runs in a cancellable worker with a 15-second deadline. Long histories render 12 recent questions, with earlier questions available on demand.
+- Bilingual retrieval uses concept coverage to decline weak matches. See the [development evaluation](EVALUATION.md) and [bilingual walkthrough](WALKTHROUGH.md).
+- Exports now offer an explicit **Save file** link after preparation; creating a file is not confirmation that the browser saved it.
 
 ## Start locally
 

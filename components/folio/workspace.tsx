@@ -77,6 +77,7 @@ import DocumentEditor from "./document-editor";
 import FeatureDialog from "./feature-dialog";
 import SourceDetail from "./source-detail";
 import Assistant from "./assistant";
+import ProjectGuide from "./project-guide";
 import ReviewView from "./review-view";
 import {
   exportMarkdown,
@@ -139,6 +140,8 @@ export default function Workspace({
 }: { onReady?: () => void; onFailure?: () => void } = {}) {
   const [data, setData] = useState<WorkspaceData>(seedWorkspace);
   const [loaded, setLoaded] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportLock = useRef(false);
   const [saving, setSaving] = useState("saved");
   const [view, setView] = useState("editor");
   const [rightOpen, setRightOpen] = useState(true);
@@ -513,13 +516,21 @@ export default function Workspace({
     }
   };
   const runExport = async (format: "word" | "html" | "backup") => {
+    if (exportLock.current) return;
+    exportLock.current = true;
+    setExporting(true);
     try {
       if (format === "word") await exportWord(project, data.language);
       if (format === "html") exportHtml(project, data.language);
       if (format === "backup") await exportBackup(project);
-      toast.success(t("导出完成", "Export complete"));
+      toast.success(
+        t("文件已准备好，请点击保存", "File ready. Use Save file to download"),
+      );
     } catch (e) {
       toast.error(errorMessage(e, data.language));
+    } finally {
+      exportLock.current = false;
+      setExporting(false);
     }
   };
   useWebMCP(project, data.projects, (id) => {
@@ -554,7 +565,9 @@ export default function Workspace({
   };
   const downloadMarkdown = () => {
     exportMarkdown(project, data.language);
-    toast.success(t("已导出 Markdown", "Markdown exported"));
+    toast.success(
+      t("Markdown 已准备好，请保存文件", "Markdown ready. Save the file below"),
+    );
   };
   const formatting = [
     {
@@ -843,7 +856,7 @@ export default function Workspace({
             </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="export-button">
+                <button className="export-button" disabled={exporting}>
                   {t("导出", "Export")}
                   <ArrowUpRight size={14} />
                 </button>
@@ -868,6 +881,19 @@ export default function Workspace({
             </DropdownMenu>
           </div>
         </header>
+        {!focus && (
+          <ProjectGuide
+            project={project}
+            language={data.language}
+            onImport={() => {
+              setUpdateSourceId(null);
+              setDialog("import");
+            }}
+            onView={setView}
+            onBackup={() => void runExport("backup")}
+            backingUp={exporting}
+          />
+        )}
         {view === "editor" ? (
           <>
             <div className="editor-toolbar">
