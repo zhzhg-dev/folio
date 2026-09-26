@@ -133,7 +133,10 @@ function NavigationContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function Workspace() {
+export default function Workspace({
+  onReady: workspaceReady,
+  onFailure,
+}: { onReady?: () => void; onFailure?: () => void } = {}) {
   const [data, setData] = useState<WorkspaceData>(seedWorkspace);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState("saved");
@@ -190,8 +193,12 @@ export default function Workspace() {
           "Could not open local storage. Check your browser permissions.",
         );
         setSaving("error");
+        onFailure?.();
       });
   }, []);
+  useEffect(() => {
+    if (loaded) workspaceReady?.();
+  }, [loaded, workspaceReady]);
   useEffect(() => {
     if (!loaded) return;
     setSaving("saving");

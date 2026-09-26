@@ -30,6 +30,13 @@ import {
   evidenceExists,
 } from "@/lib/folio/research";
 import { errorMessage } from "@/lib/folio/i18n";
+import {
+  loadModel,
+  unloadModel,
+  generateAnswer,
+  subscribeModel,
+} from "@/lib/folio/ai";
+import type { ReleaseReason } from "@/lib/folio/model-session";
 
 function AnswerCard({
   turn,
@@ -240,6 +247,7 @@ export default function Assistant({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [supported, setSupported] = useState(true);
+  const [released, setReleased] = useState<ReleaseReason>();
   const sequence = useRef(0);
   const running = useRef(false);
   const alive = useRef(true);
@@ -251,14 +259,16 @@ export default function Assistant({
   useEffect(() => {
     alive.current = true;
     setSupported(!!(navigator as Navigator & { gpu?: unknown }).gpu);
-    import("@/lib/folio/ai").then((ai) => {
-      if (alive.current) setReady(ai.modelReady());
+    const unsubscribe = subscribeModel(({ phase, reason }) => {
+      setReady(phase === "ready" || phase === "running");
+      setLoading(phase === "loading");
+      setReleased(reason);
     });
     return () => {
       alive.current = false;
       sequence.current++;
-      if (running.current)
-        void import("@/lib/folio/ai").then((ai) => ai.stopModel());
+      unsubscribe();
+      unloadModel("navigation");
     };
   }, []);
   useEffect(() => {
@@ -268,18 +278,17 @@ export default function Assistant({
     project.sources.some((s) => s.id === id),
   );
   const enable = async () => {
+    const request = ++sequence.current;
     setLoading(true);
     setError("");
     try {
-      const ai = await import("@/lib/folio/ai");
-      await ai.loadModel((p) => {
-        if (alive.current) setProgress(p * 100);
+      setProgress(0);
+      await loadModel((p) => {
+        if (alive.current && sequence.current === request) setProgress(p * 100);
       });
-      if (alive.current) setReady(true);
     } catch (e) {
-      if (alive.current) setError(errorMessage(e, language));
-    } finally {
-      if (alive.current) setLoading(false);
+      if (alive.current && sequence.current === request)
+        setError(errorMessage(e, language));
     }
   };
   const ask = async () => {
@@ -295,9 +304,13 @@ export default function Assistant({
         : undefined;
       const output =
         research.mode === "answer"
-          ? await (
-              await import("@/lib/folio/ai")
-            ).generateAnswer(project, question, selected, language, previous)
+          ? await generateAnswer(
+              project,
+              question,
+              selected,
+              language,
+              previous,
+            )
           : findPassages(project, question, selected, previous);
       if (alive.current && sequence.current === request)
         patch({
@@ -315,11 +328,12 @@ export default function Assistant({
       }
     }
   };
-  const cancel = async () => {
+  const cancel = () => {
     sequence.current++;
-    (await import("@/lib/folio/ai")).stopModel();
+    unloadModel();
     running.current = false;
     setBusy(false);
+    setError("");
   };
   return (
     <section className="research-desk">
@@ -387,7 +401,10 @@ export default function Assistant({
           <button
             aria-pressed={research.mode === "passages"}
             disabled={busy}
-            onClick={() => patch({ mode: "passages" })}
+            onClick={() => {
+              cancel();
+              patch({ mode: "passages" });
+            }}
           >
             <BookOpen size={14} />
             {t("查找原文", "Find passages")}
@@ -423,6 +440,9 @@ export default function Assistant({
               <Loader2 size={17} className="spin" />
               <span>{Math.round(progress)}%</span>
               <Progress value={progress} />
+              <button className="text-action" onClick={cancel}>
+                {t("取消加载", "Cancel setup")}
+              </button>
             </div>
           ) : (
             <button
@@ -435,6 +455,30 @@ export default function Assistant({
           )}
         </div>
       )}
+      {ready && (
+        <div className="model-session-bar">
+          <span>
+            {t(
+              "离开页面或闲置 2 分钟后自动释放 AI；已下载文件保留。",
+              "AI releases when you leave or after 2 minutes idle. Downloaded files stay cached.",
+            )}
+          </span>
+          <button className="text-action" onClick={cancel}>
+            {t("关闭 AI", "Turn off AI")}
+          </button>
+        </div>
+      )}
+      {!ready &&
+        released &&
+        ["idle", "hidden", "user"].includes(released) &&
+        research.mode === "answer" && (
+          <p className="model-release-note" role="status">
+            {t(
+              "AI 已关闭并释放运行资源，问题和记录仍然保留。",
+              "AI is off and its worker has been released. Your question and history are retained.",
+            )}
+          </p>
+        )}
       <div
         className="research-thread"
         aria-label={t("问答记录", "Research history")}

@@ -9,6 +9,7 @@ import {
 } from "./model.ts";
 import type { JSONContent } from "@tiptap/react";
 import { validResearch } from "./research.ts";
+import { prepareBackup } from "./backup-export.ts";
 export function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -324,38 +325,7 @@ export async function exportWord(project: Project, language: Language = "en") {
   download(await Packer.toBlob(doc), `${project.reportTitle}.docx`);
 }
 export async function exportBackup(project: Project) {
-  const sources = await Promise.all(
-    project.sources.map(async (s) => ({
-      ...s,
-      versions: await Promise.all(
-        s.versions.map(async (v) => {
-          const { original, ...rest } = v;
-          let originalBase64: string | undefined;
-          if (original) {
-            const bytes = new Uint8Array(await original.arrayBuffer());
-            let binary = "";
-            for (let i = 0; i < bytes.length; i += 8192)
-              binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
-            originalBase64 = btoa(binary);
-          }
-          return { ...rest, originalBase64 };
-        }),
-      ),
-    })),
-  );
-  download(
-    new Blob(
-      [
-        JSON.stringify({
-          format: "folio-project",
-          schemaVersion: 1,
-          project: { ...project, sources },
-        }),
-      ],
-      { type: "application/json" },
-    ),
-    `${project.name}.folio.json`,
-  );
+  download(await prepareBackup(project), `${project.name}.folio.json`);
 }
 export async function restoreBackup(file: File): Promise<Project> {
   if (file.size > 150 * 1024 * 1024)

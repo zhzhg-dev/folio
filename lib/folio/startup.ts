@@ -8,6 +8,7 @@ export function startupSession(
   id: string,
   requested = false,
 ) {
+  let failed = false;
   let needsRecovery = requested;
   try {
     needsRecovery ||=
@@ -18,6 +19,7 @@ export function startupSession(
   return {
     needsRecovery,
     start() {
+      failed = false;
       try {
         storage.setItem(STARTUP_KEY, id);
         storage.setItem(ACK_KEY, "1");
@@ -25,7 +27,11 @@ export function startupSession(
         /* Private browsing may disable localStorage. */
       }
     },
+    failed() {
+      failed = true;
+    },
     finish() {
+      if (failed) return;
       try {
         if (storage.getItem(STARTUP_KEY) === id)
           storage.removeItem(STARTUP_KEY);

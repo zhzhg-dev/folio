@@ -64,7 +64,13 @@ Core features make no paid API calls. Local AI needs an initial model download a
 
 Normal startup caches the small application shell sequentially. Optional PDF, AI and font resources are cached as used, rather than downloaded all at once. Offline use requires the relevant resources to have been cached. Safe startup does not register an offline worker. Private preview authentication and the first visit still require a connection.
 
-### Startup protection (0.3.1)
+### Startup and recovery (0.3.2)
+
+The recovery page can list and export saved projects without importing the workspace, editor, PDF reader or AI. It uses read-only local storage access and the same `.folio.json` format as the normal export. Each export runs in a worker, reads original files sequentially and can be canceled. Nothing is uploaded or removed. Startup requests that do not become ready within 15 seconds, and caught render failures, return to recovery; a late import cannot reopen the failed workspace. This guard needs a responsive JavaScript event loop and cannot recover a frozen browser process.
+
+Local AI now has explicit **Cancel setup** and **Turn off AI** controls. Stopping terminates its worker and rejects the pending task. Leaving the research view, hiding the page, or 2 minutes of idle time releases the model. Setup has a 5-minute limit and answers a 2-minute limit. Your question and previous answers remain saved; downloaded model files are not intentionally cleared. Re-enable AI to use it again.
+
+Development priorities and acceptance gates are recorded in [ROADMAP.md](ROADMAP.md): reliability/recovery, evidence quality, then first-use and distribution. The reported client freeze remains unresolved pending controlled performance investigation.
 
 The first visit after this update, or a visit following an interrupted session, pauses on a lightweight recovery page before importing the workspace. Use `?safe=1` to request that page explicitly. Opening safely pauses optional browser integrations and new offline-worker registration for that session. Saved documents are not removed. An additional tab can also trigger this precautionary screen.
 

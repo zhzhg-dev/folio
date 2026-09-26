@@ -636,6 +636,9 @@ html[lang="zh-CN"] .research-empty h2 {
   overscroll-behavior: contain;
 }
 .pdf-reader { min-width: 0; max-width: 100%; }
+.model-session-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 32px 12px; padding: 12px 0; border-bottom: 1px solid #e4e6df; font-size: 14px; color: #60635f; }
+.model-session-bar button { flex-shrink: 0; }
+.model-release-note { margin: 0 32px 12px; font-size: 14px; color: #60635f; }
 .pdf-sheet {
   position: relative;
   background: #fff;

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Component } from "react";
 import { createRoot } from "react-dom/client";
 import Home from "./app/page";
 import "@fontsource-variable/geist";
@@ -9,6 +9,31 @@ import "./app/globals.css";
 import "./app/atelier.css";
 import "./app/research.css";
 
-export function renderWorkspace(root: HTMLElement) {
-  createRoot(root).render(<Home />);
+class WorkspaceBoundary extends Component<
+  { children: React.ReactNode; onFailure: () => void },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch() {
+    this.props.onFailure();
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+export function renderWorkspace(
+  root: HTMLElement,
+  events: { onReady: () => void; onFailure: () => void },
+) {
+  const view = createRoot(root);
+  view.render(
+    <WorkspaceBoundary onFailure={events.onFailure}>
+      <Home onReady={events.onReady} onFailure={events.onFailure} />
+    </WorkspaceBoundary>,
+  );
+  return () => view.unmount();
 }

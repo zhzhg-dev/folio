@@ -144,7 +144,7 @@ export default function FeatureDialog({
           </p>
         </div>
         <p className="small-copy">
-          Folio 0.3.1 · {t("个人工作空间", "Personal workspace")}
+          Folio 0.3.2 · {t("个人工作空间", "Personal workspace")}
         </p>
         {error && (
           <p className="inline-error" role="alert">

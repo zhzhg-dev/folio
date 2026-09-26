@@ -33,10 +33,10 @@ test("safe startup does not import the workspace until explicitly opened", async
   const events = {};
   const root = {
     innerHTML: "",
-    querySelector() {
+    querySelector(selector) {
       return {
         addEventListener(type, fn) {
-          if (type === "click") click = fn;
+          if (type === "click" && selector === "[data-open]") click = fn;
         },
       };
     },
@@ -55,8 +55,10 @@ test("safe startup does not import the workspace until explicitly opened", async
       if (name === "./render") {
         imports++;
         return {
-          renderWorkspace() {
+          renderWorkspace(_root, events) {
             renders++;
+            events.onReady();
+            return () => {};
           },
         };
       }
@@ -71,6 +73,9 @@ test("safe startup does not import the workspace until explicitly opened", async
     localStorage: memory(),
     location: { search: "?safe=1" },
     URLSearchParams,
+    setTimeout,
+    clearTimeout,
+    queueMicrotask,
     crypto: { randomUUID: () => "test-session" },
   });
   await Promise.resolve();
@@ -95,6 +100,72 @@ test("an interrupted workspace requires confirmation; a cleanly closed one does 
   first.finish();
   assert.equal(startupSession(store, "after-close").needsRecovery, false);
   assert.equal(startupSession(store, "safe-link", true).needsRecovery, true);
+  const failed = startupSession(store, "failed");
+  failed.start();
+  failed.failed();
+  failed.finish();
+  assert.equal(startupSession(store, "after-failure").needsRecovery, true);
+});
+test("startup timeout returns to recovery and ignores a late workspace import", async () => {
+  const source = await fs.readFile(
+    new URL("../main.ts", import.meta.url),
+    "utf8",
+  );
+  const code = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText;
+  let click;
+  let expire;
+  let finishImport;
+  let renders = 0;
+  const pending = new Promise((resolve) => (finishImport = resolve));
+  const root = {
+    innerHTML: "",
+    querySelector(selector) {
+      return {
+        addEventListener(type, fn) {
+          if (type === "click" && selector === "[data-open]") click = fn;
+        },
+      };
+    },
+  };
+  vm.runInNewContext(code, {
+    exports: {},
+    require(name) {
+      if (name === "./lib/folio/startup") return { startupSession };
+      if (name === "./app/startup.css") return {};
+      if (name === "./render") return pending;
+      throw new Error(name);
+    },
+    document: { getElementById: () => root, documentElement: { dataset: {} } },
+    window: { addEventListener() {} },
+    localStorage: memory(),
+    location: { search: "?safe=1" },
+    URLSearchParams,
+    crypto: { randomUUID: () => "timeout" },
+    setTimeout(callback) {
+      expire = callback;
+      return 1;
+    },
+    clearTimeout() {},
+    queueMicrotask,
+  });
+  click();
+  await new Promise((resolve) => setImmediate(resolve));
+  expire();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.match(root.innerHTML, /could not open/);
+  assert.match(root.innerHTML, /Export saved projects/);
+  finishImport({
+    renderWorkspace() {
+      renders++;
+    },
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(renders, 0);
 });
 test("closing one tab cannot clear another tab's recovery marker", () => {
   const store = memory();
