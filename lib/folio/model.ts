@@ -1,5 +1,40 @@
 import type { JSONContent } from "@tiptap/react";
 export type Language = "zh" | "en";
+export type Evidence = {
+  id: string;
+  sourceId: string;
+  versionId: string;
+  page: number;
+  quote: string;
+  name: string;
+  label: string;
+};
+export type Draft = {
+  paragraphs: { text: string; evidenceIds: string[] }[];
+  evidence: Evidence[];
+};
+export type ResearchTurn = Draft & {
+  id: string;
+  question: string;
+  retrievalQuery: string;
+  sourceIds: string[];
+  mode: "passages" | "answer";
+  status: "answered" | "insufficient" | "conflicting";
+  createdAt: string;
+};
+export type ReadingPosition = {
+  sourceId: string;
+  versionId: string;
+  page: number;
+  quote: string;
+};
+export type ResearchState = {
+  question: string;
+  selectedSourceIds: string[];
+  mode: "passages" | "answer";
+  turns: ResearchTurn[];
+  followUp?: boolean;
+};
 export type SourceVersion = {
   id: string;
   text: string;
@@ -36,6 +71,9 @@ export type Project = {
   createdAt: string;
   updatedAt: string;
   example?: boolean;
+  research?: ResearchState;
+  reading?: ReadingPosition;
+  lastView?: string;
 };
 export type WorkspaceData = {
   schemaVersion: 1;

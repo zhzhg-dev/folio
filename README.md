@@ -8,7 +8,7 @@ A local-first research and writing workspace. Bring your sources together, write
 
 Folio opens in English. Switch between **English / 中文** in the sidebar or the mobile footer; your preference is remembered. Changing the interface language never translates or overwrites your writing.
 
-> **0.2 working preview.** The core writing workflow is usable. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+> **0.3 working preview.** Research, evidence review, and writing work together. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
 
 ## Start locally
 
@@ -32,12 +32,16 @@ npm start
 
 ## What you can do
 
+- **Ask your sources.** Use a dedicated research desk with source selection, saved questions and responses, and optional follow-up context. Find exact passages without a model, or enable on-device AI for a cited answer. Empty retrieval and model-declared insufficient evidence produce an explicit no-answer state.
+- **Check original PDF pages.** Open a citation at its source revision and page, inspect highlighted text lines, zoom, and navigate pages. The extracted text remains available alongside the original. Resume your last reading page later.
+- **Bring selected passages into writing.** Choose individual answer paragraphs and append them with versioned citations. Undo the insertion while the document is unchanged; the automatic snapshot remains available after further editing.
+
 - **Read and write in one place.** Import text PDFs, Markdown, TXT, or pasted text. Organize projects, edit rich text, navigate an outline, and enter focus mode.
 - **Keep evidence attached.** Citations retain the exact source revision, quote, and page or paragraph. Open the original evidence from the document.
 - **Review changes deliberately.** Updating a source preserves earlier revisions and your writing. Review stale citations and replace their evidence individually.
 - **Recover earlier work.** Save and restore snapshots. Folio also saves a snapshot before adopting an AI draft, replacing evidence, or restoring a document.
 - **Take your work with you.** Export Word, Markdown, HTML, or print. JSON project backups include original files, source history, and snapshots.
-- **Try local AI.** Optionally run Qwen3 through WebLLM in a Web Worker on a compatible WebGPU device. Preview a generated draft before appending it.
+- **Try local AI.** Optionally run Qwen3 through WebLLM in a Web Worker on a compatible WebGPU device. Review and select a generated answer before appending it. If the model identifies conflicting sources, their positions keep separate citations.
 
 The interface combines a quiet three-pane workspace, responsive navigation, self-hosted Geist and Newsreader fonts, and Noto Sans SC for Chinese. It supports reduced motion and keyboard navigation. Production builds include an offline app shell and a PWA manifest. Browsers supporting WebMCP can list and open projects without exposing document contents through that interface.
 
@@ -63,8 +67,9 @@ After a complete first online load, the production app caches its shell for offl
 ## Current limits
 
 - 20 MB per file; up to 300 PDF pages and 20 sources per project; original files plus source history are limited to 80 MB per project.
-- PDFs provide extracted text, page references, and the original file. Scanned-document OCR, complex layout parsing, and visual PDF highlights are not yet available.
-- AI retrieval currently uses keywords: at most three passages of 400 characters each. It is not semantic search or full-project reasoning.
+- PDF highlights identify matching text items on a rendered page. Scanned-document OCR and complex-layout/rotated-text accuracy are not established. The reader falls back to extracted text when a quote cannot be located visually.
+- Retrieval uses paragraph-aware chunks, BM25-style term ranking, Chinese bigrams, source diversity, and a small bilingual term dictionary. It returns up to six passages within a 2,400-character budget. It is lexical retrieval, not general multilingual semantic search or full-project reasoning.
+- Follow-ups can reuse the previous question when it contains a reference such as “it” or “these”. Earlier generated answers are not treated as source evidence.
 - Citation checks verify that a revision and quote exist. They do not prove that a claim follows from the evidence. Review generated writing before adopting it.
 - AI appends reviewed drafts; it does not automatically replace or publish your document.
 - No cloud synchronization, collaborative editing, native mobile app, or scheduled source monitoring.
@@ -82,6 +87,8 @@ lib/folio/storage.ts       IndexedDB and save-conflict detection
 lib/folio/integrity.ts     Citation and document validation
 lib/folio/files.ts         Import, export, and backup validation
 lib/folio/ai.ts            Local retrieval and structured generation
+lib/folio/retrieval.ts     Bilingual lexical ranking and exact passage slices
+lib/folio/research.ts      Research history, answer and citation validation
 tests/                     Integrity, export, and migration tests
 scripts/create-offline.mjs Offline app-shell generation
 ```
@@ -92,7 +99,7 @@ Built with React 19, TypeScript, Vite, Tiptap, Dexie, PDF.js, WebLLM, and Radix 
 
 Run the checks above before opening a pull request. GitHub Actions runs type checking, tests, and the production build. See [QA.md](QA.md) for the scope of verification and outstanding checks.
 
-The next priorities are reliable AI across real devices, bilingual retrieval evaluation, a visual PDF reader and OCR, then installation and browser compatibility. Contributions that improve an existing workflow are welcome.
+The next priorities are broader bilingual retrieval evaluation, reliable AI across real devices, OCR and complex PDF layouts, then installation and browser compatibility. Contributions that improve an existing workflow are welcome.
 
 ## License
 

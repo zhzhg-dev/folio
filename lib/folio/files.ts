@@ -8,6 +8,7 @@ import {
   type Language,
 } from "./model.ts";
 import type { JSONContent } from "@tiptap/react";
+import { validResearch } from "./research.ts";
 export function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -371,6 +372,22 @@ export async function restoreBackup(file: File): Promise<Project> {
   )
     throw new Error("不是有效的 Folio 项目备份 / Invalid Folio backup");
   const p = data.project;
+  if (p.research !== undefined && !validResearch(p.research))
+    throw new Error(
+      "备份中的问答记录无效 / Invalid research history in backup",
+    );
+  if (
+    p.reading !== undefined &&
+    (!p.reading ||
+      typeof p.reading.sourceId !== "string" ||
+      typeof p.reading.versionId !== "string" ||
+      typeof p.reading.quote !== "string" ||
+      !Number.isInteger(p.reading.page) ||
+      p.reading.page < 1)
+  )
+    throw new Error(
+      "备份中的阅读位置无效 / Invalid reading position in backup",
+    );
   for (const s of p.sources) {
     if (
       typeof s.id !== "string" ||
@@ -383,7 +400,14 @@ export async function restoreBackup(file: File): Promise<Project> {
       if (
         typeof v.text !== "string" ||
         typeof v.id !== "string" ||
-        !Array.isArray(v.pages)
+        !Array.isArray(v.pages) ||
+        !v.pages.length ||
+        v.pages.some(
+          (page: { page: unknown; text: unknown }) =>
+            !Number.isInteger(page.page) ||
+            Number(page.page) < 1 ||
+            typeof page.text !== "string",
+        )
       )
         throw new Error("资料版本无效 / Invalid version");
       if (v.originalBase64) {

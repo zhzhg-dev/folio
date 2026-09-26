@@ -29,6 +29,7 @@ import {
   ArrowLeft,
   Languages,
   ArrowRight,
+  MessageSquare,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -67,6 +68,9 @@ import {
   type Source,
   type SourceVersion,
   type Language,
+  type Evidence,
+  type ReadingPosition,
+  type ResearchState,
 } from "@/lib/folio/model";
 import { loadWorkspace, saveWorkspace } from "@/lib/folio/storage";
 import DocumentEditor from "./document-editor";
@@ -84,6 +88,7 @@ import { countChanges, citationStatus } from "@/lib/folio/integrity";
 import type { Draft } from "@/lib/folio/ai";
 import { useWebMCP } from "./webmcp";
 import { errorMessage } from "@/lib/folio/i18n";
+import { draftNodes } from "@/lib/folio/research";
 
 function EditableText({
   className,
@@ -148,6 +153,13 @@ export default function Workspace() {
   const [replacing, setReplacing] = useState<Record<string, string> | null>(
     null,
   );
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [panelTab, setPanelTab] = useState("sources");
+  const [undoInsertion, setUndoInsertion] = useState<{
+    projectId: string;
+    before: Project["content"];
+    after: Project["content"];
+  } | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const saveChain = useRef(Promise.resolve());
   const project =
@@ -168,6 +180,16 @@ export default function Workspace() {
     loadWorkspace()
       .then((v) => {
         setData(v);
+        const active = v.projects.find((p) => p.id === v.activeId);
+        setView(active?.lastView || "editor");
+        if (active?.reading) {
+          const r = active.reading;
+          setSelectedSource(
+            active.sources.find((s) => s.id === r.sourceId) || null,
+          );
+          setSelectedVersionId(r.versionId);
+          setSelectedQuote(r.quote);
+        }
         setLoaded(true);
       })
       .catch(() => {
@@ -248,8 +270,44 @@ export default function Workspace() {
       ),
     }));
   }, []);
+  const saveReading = (reading: ReadingPosition) => updateProject({ reading });
+  const updateResearch = (research: ResearchState) => {
+    const id = project.id;
+    setData((current) => ({
+      ...current,
+      projects: current.projects.map((p) =>
+        p.id === id
+          ? { ...p, research, updatedAt: new Date().toISOString() }
+          : p,
+      ),
+    }));
+  };
+  const inspectEvidence = (e: Evidence) => {
+    saveReading({
+      sourceId: e.sourceId,
+      versionId: e.versionId,
+      page: e.page,
+      quote: e.quote,
+    });
+    setEvidenceOpen(true);
+  };
+  useEffect(() => {
+    if (!loaded || project.lastView === view) return;
+    updateProject({ lastView: view });
+  }, [view, loaded, project.id]);
   const openSource = (source: Source, quote = "", versionId = "") => {
     setSelectedSource(source);
+    const version =
+      source.versions.find((v) => v.id === versionId) ||
+      source.versions.at(-1)!;
+    saveReading({
+      sourceId: source.id,
+      versionId: version.id,
+      page:
+        version.pages.find((p) => quote && p.text.includes(quote))?.page || 1,
+      quote,
+    });
+    setPanelTab("sources");
     setSelectedQuote(quote);
     setSelectedVersionId(versionId);
     setReplacing(null);
@@ -317,7 +375,18 @@ export default function Workspace() {
         existing.add(hash);
         return true;
       });
-      updateProject({ sources: [...project.sources, ...unique] });
+      updateProject({
+        sources: [...project.sources, ...unique],
+        research: project.research
+          ? {
+              ...project.research,
+              selectedSourceIds: [
+                ...project.research.selectedSourceIds,
+                ...unique.map((s) => s.id),
+              ],
+            }
+          : undefined,
+      });
       toast.success(
         t(
           "已添加 " + unique.length + " 份资料",
@@ -389,56 +458,55 @@ export default function Workspace() {
       ),
     );
   };
-  const adoptDraft = (draft: Draft) => {
+  const undoLastInsertion = () => {
+    if (!undoInsertion || undoInsertion.projectId !== project.id) return;
     if (
-      draft.evidence.some(
-        (e) =>
-          !project.sources
-            .find((s) => s.id === e.sourceId)
-            ?.versions.slice(-1)
-            .some((v) => v.id === e.versionId && v.text.includes(e.quote)),
-      )
+      JSON.stringify(project.content) !== JSON.stringify(undoInsertion.after)
     ) {
-      toast.error(
-        t("资料已变化，请重新生成", "Sources changed. Generate a new draft."),
+      toast.info(
+        t(
+          "正文已有后续修改，可从版本记录恢复。",
+          "The document has changed. Restore the earlier snapshot from Version history.",
+        ),
       );
       return;
     }
-    const nodes = draft.paragraphs.map((p) => ({
-      type: "paragraph",
-      content: [
-        { type: "text", text: p.text },
-        ...p.evidenceIds.map((id) => {
-          const e = draft.evidence.find((e) => e.id === id)!;
-          return {
-            type: "citation",
-            attrs: {
-              sourceId: e.sourceId,
-              versionId: e.versionId,
-              quote: e.quote,
-              page: e.page,
-              label: e.label,
-            },
-          };
-        }),
-      ],
-    }));
-    updateProject({
-      content: {
-        ...project.content,
-        content: [...(project.content.content || []), ...nodes],
-      },
-      snapshots: [
-        snapshot(t("采用 AI 草稿之前", "Before accepting AI draft")),
-        ...project.snapshots,
-      ],
-    });
+    updateProject({ content: undoInsertion.before });
+    setUndoInsertion(null);
     toast.success(
       t(
-        "草稿已追加，原有正文已保留",
-        "Draft appended. Your existing writing is preserved.",
+        "已撤销写入，问答记录仍保留。",
+        "Insertion undone. The research response is still saved.",
       ),
     );
+  };
+  const adoptDraft = (draft: Draft): boolean => {
+    try {
+      const nodes = draftNodes(draft, project);
+      const before = structuredClone(project.content);
+      const after = {
+        ...project.content,
+        content: [...(project.content.content || []), ...nodes],
+      };
+      updateProject({
+        content: after,
+        snapshots: [
+          snapshot(t("写入研究内容之前", "Before adding research passages")),
+          ...project.snapshots,
+        ],
+      });
+      setUndoInsertion({ projectId: project.id, before, after });
+      toast.success(
+        t(
+          "内容和引用已写入文稿。可用顶部按钮撤销。",
+          "Added with citations. Use Undo insertion above to reverse it.",
+        ),
+      );
+      return true;
+    } catch (error) {
+      toast.error(errorMessage(error, data.language));
+      return false;
+    }
   };
   const runExport = async (format: "word" | "html" | "backup") => {
     try {
@@ -582,6 +650,17 @@ export default function Workspace() {
           </button>
           <nav className="main-nav" aria-label={t("主导航", "Main navigation")}>
             <button
+              className={view === "research" ? "active" : ""}
+              onClick={() => {
+                setView("research");
+                setSelectedSource(null);
+              }}
+            >
+              <MessageSquare size={18} />
+              {t("资料问答", "Ask your sources")}
+              <span className="nav-dot" />
+            </button>
+            <button
               className={view === "editor" ? "active" : ""}
               onClick={() => setView("editor")}
             >
@@ -631,8 +710,12 @@ export default function Workspace() {
                 className={p.id === project.id ? "selected" : ""}
                 onClick={() => {
                   setData((d) => ({ ...d, activeId: p.id }));
-                  setSelectedSource(null);
-                  setView("editor");
+                  setSelectedSource(
+                    p.sources.find((s) => s.id === p.reading?.sourceId) || null,
+                  );
+                  setSelectedVersionId(p.reading?.versionId || "");
+                  setSelectedQuote(p.reading?.quote || "");
+                  setView(p.lastView || "editor");
                 }}
               >
                 <span className="project-dot">
@@ -740,6 +823,12 @@ export default function Workspace() {
             )}
           </div>
           <div className="top-actions">
+            {undoInsertion?.projectId === project.id && (
+              <button className="undo-insertion" onClick={undoLastInsertion}>
+                <Undo2 size={14} />
+                {t("撤销写入", "Undo insertion")}
+              </button>
+            )}
             <span className={`save-state ${saving}`}>
               <Check size={14} />
               {saving === "saved"
@@ -933,7 +1022,7 @@ export default function Workspace() {
               </div>
               {rightOpen && !focus && (
                 <aside className="reference-panel">
-                  <Tabs defaultValue="sources">
+                  <Tabs value={panelTab} onValueChange={setPanelTab}>
                     <TabsList variant="line" className="reference-tabs">
                       <TabsTrigger value="sources">
                         {t("参考资料", "Sources")}
@@ -966,6 +1055,12 @@ export default function Workspace() {
                               setDialog("import");
                             }}
                             onCite={addCitation}
+                            initialPage={
+                              project.reading?.sourceId === selectedSource.id
+                                ? project.reading.page
+                                : 1
+                            }
+                            onPosition={saveReading}
                           />
                           {replacing && (
                             <div className="replace-citation-note">
@@ -1060,12 +1155,34 @@ export default function Workspace() {
                       )}
                     </TabsContent>
                     <TabsContent value="assistant">
-                      <Assistant
-                        key={project.id}
-                        project={project}
-                        language={data.language}
-                        onAdopt={adoptDraft}
-                      />
+                      <div className="research-invitation">
+                        <MessageSquare size={25} />
+                        <h3>
+                          {t(
+                            "把问题带回资料",
+                            "Bring a question to your sources",
+                          )}
+                        </h3>
+                        <p>
+                          {t(
+                            "在研究工作区连续提问、核对原文，再把选中的内容写入文稿。",
+                            "Ask follow-up questions, verify passages, and bring selected answers into your document.",
+                          )}
+                        </p>
+                        <button
+                          className="primary-button"
+                          onClick={() => setView("research")}
+                        >
+                          {t("打开资料问答", "Open research desk")}
+                          <ArrowUpRight size={15} />
+                        </button>
+                        <small>
+                          {t(
+                            "问答记录自动保存在这个项目中。",
+                            "Research history is saved with this project.",
+                          )}
+                        </small>
+                      </div>
                     </TabsContent>
                   </Tabs>
                 </aside>
@@ -1093,6 +1210,28 @@ export default function Workspace() {
               </span>
             </footer>
           </>
+        ) : view === "research" ? (
+          <div className="research-surface">
+            {project.reading && (
+              <button
+                className="resume-reading"
+                onClick={() => setEvidenceOpen(true)}
+              >
+                <BookOpen size={14} />
+                {t("继续阅读 · 第 ", "Resume reading · p. ")}
+                {project.reading.page}
+              </button>
+            )}
+            <Assistant
+              key={project.id}
+              project={project}
+              language={data.language}
+              onAdopt={adoptDraft}
+              onChange={updateResearch}
+              onEvidence={inspectEvidence}
+              onImport={() => setDialog("import")}
+            />
+          </div>
         ) : view === "review" ? (
           <ReviewView
             project={project}
@@ -1450,6 +1589,62 @@ export default function Workspace() {
               </p>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={evidenceOpen} onOpenChange={setEvidenceOpen}>
+        <DialogContent className="evidence-dialog">
+          <DialogHeader>
+            <DialogTitle>{t("核对证据", "Verify the evidence")}</DialogTitle>
+            <DialogDescription>
+              {t(
+                "阅读回答所引用的原始资料版本。",
+                "Read the exact source revision cited in the response.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {project.reading &&
+            project.sources.find((s) => s.id === project.reading!.sourceId) && (
+              <div className="evidence-reader-body">
+                <SourceDetail
+                  key={
+                    project.reading.sourceId +
+                    project.reading.versionId +
+                    project.reading.quote
+                  }
+                  source={project.sources.find(
+                    (s) => s.id === project.reading!.sourceId,
+                  )!}
+                  quote={project.reading.quote}
+                  versionId={project.reading.versionId}
+                  initialPage={project.reading.page}
+                  language={data.language}
+                  expanded
+                  onPosition={saveReading}
+                  onBack={() => setEvidenceOpen(false)}
+                  onUpdate={() => {
+                    setEvidenceOpen(false);
+                    setUpdateSourceId(project.reading!.sourceId);
+                    setDialog("import");
+                  }}
+                  onCite={(source, version, page, quote) => {
+                    adoptDraft({
+                      paragraphs: [{ text: quote, evidenceIds: ["E1"] }],
+                      evidence: [
+                        {
+                          id: "E1",
+                          sourceId: source.id,
+                          versionId: version.id,
+                          page,
+                          quote,
+                          name: source.name,
+                          label: String(project.sources.indexOf(source) + 1),
+                        },
+                      ],
+                    });
+                  }}
+                />
+              </div>
+            )}
         </DialogContent>
       </Dialog>
       <Toaster position="bottom-right" richColors closeButton />
