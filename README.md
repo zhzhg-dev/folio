@@ -2,13 +2,25 @@
 
 **Keep the source. Own the writing.**
 
-A local-first research and writing workspace. Bring your sources together, write with versioned citations, and revisit your conclusions when the evidence changes.
+A local-first research workspace for comparing options and writing evidence-backed decision briefs. Keep original passages close to your findings, distinguish facts from judgments, and revisit conclusions as sources change.
 
 [简体中文](README.zh-CN.md) · [Verification](QA.md) · [MIT license](LICENSE)
 
 Folio opens in English. Switch between **English / 中文** in the sidebar or the mobile footer; your preference is remembered. Changing the interface language never translates or overwrites your writing.
 
-> **0.4 working preview.** Research, evidence review, and writing work together. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+> **0.5 working preview.** Comparison, evidence review and decision briefs work together. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+
+## New in 0.5
+
+- **Compare & decide:** define an objective and constraints, compare up to 6 options across 12 criteria, and link each option to its sources.
+- Record facts, personal judgments or unanswered questions. Attach exact passages by searching linked sources or selecting text from the latest original. Review marks are manual and reset after editing a finding or its meaning.
+- New source revisions flag affected findings conservatively, including unchanged quotes; users choose when to replace their evidence. The comparison never silently rewrites conclusions.
+- Build an editable decision brief with a comparison table, versioned citations, recommendation and open questions. It appends to the document and saves a pre-insertion snapshot. The brief is a snapshot, not a live-synced document.
+- Backups retain the comparison and review marks. Markdown tables and reference appendices preserve all distinct quoted passages. Pending autosaves coalesce instead of accumulating stale writes.
+- Downloads offer a **Save file** link and, where supported, **Save as…**. JSON backups up to 2 MiB also support **Copy backup text**; paste it into Preferences & backups → Restore from backup text. Copying is not a durable backup until you save the text elsewhere.
+- New installations open a fictional support-software comparison. Existing projects and default views are preserved. Use **New project → Explore a complete comparison sample** to add the sample without changing your work.
+
+The comparison workflow is human-led: it does not automatically extract all cells, verify semantic truth, rank options or conduct web research. The browser download manager remains unverified in the embedded host; the original freeze incident is still open. See [QA](QA.md).
 
 ## New in 0.4
 

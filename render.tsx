@@ -8,6 +8,7 @@ import "@fontsource-variable/noto-sans-sc";
 import "./app/globals.css";
 import "./app/atelier.css";
 import "./app/research.css";
+import "./app/comparison.css";
 
 class WorkspaceBoundary extends Component<
   { children: React.ReactNode; onFailure: () => void },

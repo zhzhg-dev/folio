@@ -9,6 +9,7 @@ import {
 } from "./model.ts";
 import type { JSONContent } from "@tiptap/react";
 import { validResearch } from "./research.ts";
+import { validComparison } from "./comparison.ts";
 import { prepareBackup, saveDownload } from "./backup-export.ts";
 export function download(blob: Blob, name: string) {
   saveDownload(blob, name);
@@ -100,6 +101,24 @@ export function markdown(node: JSONContent): string {
       node.text,
     );
   const children = node.content || [];
+  if (node.type === "table") {
+    const rows = children.map((row) =>
+      (row.content || []).map((cell) =>
+        (cell.content || [])
+          .map(markdown)
+          .join("<br>")
+          .replaceAll("|", "\\|")
+          .replaceAll("\n", "<br>"),
+      ),
+    );
+    if (!rows.length) return "";
+    const row = (cells: string[]) => `| ${cells.join(" | ")} |`;
+    return [
+      row(rows[0]),
+      row(rows[0].map(() => "---")),
+      ...rows.slice(1).map(row),
+    ].join("\n");
+  }
   if (node.type === "heading")
     return `${"#".repeat(node.attrs?.level || 2)} ${children.map(markdown).join("")}`;
   if (node.type === "blockquote")
@@ -127,7 +146,13 @@ export function markdown(node: JSONContent): string {
 export function referenceLines(project: Project) {
   const seen = new Set<string>();
   return citations(project.content).flatMap((c) => {
-    const key = `${c.attrs?.label}:${c.attrs?.sourceId}:${c.attrs?.versionId}`;
+    const key = JSON.stringify([
+      c.attrs?.label,
+      c.attrs?.sourceId,
+      c.attrs?.versionId,
+      c.attrs?.page,
+      c.attrs?.quote,
+    ]);
     if (seen.has(key)) return [];
     seen.add(key);
     const source = project.sources.find((s) => s.id === c.attrs?.sourceId);
@@ -337,6 +362,8 @@ export async function restoreBackup(file: File): Promise<Project> {
   )
     throw new Error("不是有效的 Folio 项目备份 / Invalid Folio backup");
   const p = data.project;
+  if (p.comparison !== undefined && !validComparison(p.comparison))
+    throw new Error("备份中的比较记录无效 / Invalid comparison in backup");
   if (p.research !== undefined && !validResearch(p.research))
     throw new Error(
       "备份中的问答记录无效 / Invalid research history in backup",

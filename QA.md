@@ -1,5 +1,18 @@
 # Folio verification
 
+## 0.5 comparisons and decision briefs — 2026-09-26
+
+- Type checking, 63 automated tests and the production build pass. Reloading the production build on the same localhost origin retained the restored comparison, the USD 18 finding and its reviewed mark. No warnings or errors appeared in the inspected application console. The startup entry remains 5.15 KB; optional AI is not loaded on entry.
+
+- Automated checks cover comparison shape/limits, immutable version/page citations, explicit unknowns, manual review semantics, changed sources, non-mutating report generation, complete reference appendices, Markdown tables and comparison backup restoration. Autosave tests cover coalescing while writes are in flight, truthful status reporting, errors and disposed queues. A direct-save test confirms that success is reported only after the file writer closes and that failure retains a download fallback.
+- In the embedded browser, added the fictional support-software comparison through the UI. It showed three options, three criteria, one missing entry and three findings linked to an older source version. Nothing was initially marked reviewed.
+- Searched the Harbor price cell, found the current USD 18 annual-billing passage, removed the USD 15 citation, attached the new passage, edited the finding and marked it manually reviewed. The table showed 1/9 reviewed and two other findings to revisit.
+- Built a decision brief through the UI. It contained the editable comparison table, eight versioned citations, the recorded recommendation and explicit open questions. An earlier draft snapshot and Undo insertion were retained.
+- Exported the actual edited project to the backup notice, used Copy backup text, and restored that exact clipboard text through Preferences & backups. A separate restored project retained the updated quote, 1/9 manual review status, source revisions and existing brief. This verifies the text backup path, not a disk download round trip. Text fallback is limited to JSON backups of at most 2 MiB.
+- Checked English/Chinese controls without translating user content. At 390×844, the document width was 390px; the comparison table scrolls inside its own region. Desktop layout was checked at 1440×1000.
+- The embedded browser's Save file activation and download helper did not yield a completed download event; no matching file was found in the normal Downloads folder. Save as is conditional on the browser API and is unit-tested, but its native picker completion is not verified here. Keep download interoperability open.
+- The controlled workflow did not reproduce the original reported full-client freeze. The root cause remains unresolved; this release must not be described as a proven fix. No model download or AI inference was started in this session. This feature is a user-led research workflow, not an AI quality benchmark.
+
 ## 0.4 research quality and guided workflow — 2026-09-26
 
 - 54 automated tests plus a separate 40-case retrieval evaluation. Baseline 30/40; current 40/40 on development fixtures (not held-out). See EVALUATION.md for scoring and limits. New tests include search worker cancellation/error/deadline/late-result behavior, lean source payloads, topic-specific summary rejection, follow-up topic changes, manual review backup round trips, malformed model objects and download blob cleanup.

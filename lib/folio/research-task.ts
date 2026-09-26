@@ -7,6 +7,7 @@ export function researchInput(project: Project, ids: string[]): Project {
     content: { type: "doc", content: [] },
     snapshots: [],
     research: undefined,
+    comparison: undefined,
     sources: project.sources.map((s) => ({
       ...s,
       versions: ids.includes(s.id)

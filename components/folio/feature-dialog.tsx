@@ -48,6 +48,7 @@ export default function FeatureDialog({
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
+  const [backupText, setBackupText] = useState("");
   const input = useRef<HTMLInputElement>(null);
   const restoreInput = useRef<HTMLInputElement>(null);
   const perform = async (fn: () => Promise<void>) => {
@@ -148,8 +149,41 @@ export default function FeatureDialog({
             )}
           </p>
         </div>
+        <details className="backup-text-restore">
+          <summary>{t("从备份文本恢复", "Restore from backup text")}</summary>
+          <p className="small-copy">
+            {t(
+              "适用于下载受限时复制的小型项目备份。恢复会创建新项目。",
+              "For small project backups copied when downloads are unavailable. Restoring creates a new project.",
+            )}
+          </p>
+          <textarea
+            aria-label={t("粘贴备份文本", "Paste backup text")}
+            rows={4}
+            maxLength={2 * 1024 * 1024}
+            value={backupText}
+            onChange={(e) => setBackupText(e.target.value)}
+            placeholder={t(
+              "在这里粘贴 Folio 备份文本…",
+              "Paste your Folio backup text here…",
+            )}
+          />
+          <button
+            className="secondary-button"
+            disabled={busy || !backupText.trim()}
+            onClick={() =>
+              restore(
+                new File([backupText], "pasted.folio.json", {
+                  type: "application/json",
+                }),
+              )
+            }
+          >
+            {t("恢复此备份", "Restore this backup")}
+          </button>
+        </details>
         <p className="small-copy">
-          Folio 0.4.0 · {t("个人工作空间", "Personal workspace")}
+          Folio 0.5.0 · {t("个人工作空间", "Personal workspace")}
         </p>
         {error && (
           <p className="inline-error" role="alert">

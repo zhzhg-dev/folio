@@ -1,5 +1,11 @@
 # A first project in Folio
 
+## Compare options and deliver a brief / 比较方案并交付简报
+
+**English:** Choose **New project → Comparison & decision brief**, or use **Explore a complete comparison sample**. Define your objective and constraints, name the options and criteria, then link sources in each column header. Open a cell to record a fact, judgment or unanswered question. Search linked sources or read the original page, attach an exact passage, and mark it reviewed only after checking the wording and conditions. New source revisions require another review; old evidence is retained. **Build decision brief** appends a table, recommendation, citations and open questions to the writing desk and saves a snapshot first. Export Word, Markdown or HTML from there. To preserve the entire project, export a JSON backup. For backups up to 2 MiB, **Copy backup text** and **Preferences & backups → Restore from backup text** provide a second route if downloads are unavailable. Save copied text to a separate file for durable backup.
+
+**中文：** 在“新建项目”选择“方案比较与研究简报”，或先体验完整示例。填写目标、约束、方案及比较维度，在表头关联资料。打开单元格，记录事实、个人判断或待确认信息；检索关联资料或直接查看原文，附上准确引用，核对表述与条件后手动标记。资料出现新版本后需要再次核对，旧证据仍保留。“写入研究简报”会先保存快照，再把比较表、建议、引用和待确认事项追加到写作页。随后可导出 Word、Markdown 或 HTML。完整项目使用 JSON 备份；2 MiB 以内的备份还可以“复制备份文本”，在“偏好与备份 → 从备份文本恢复”中还原。请把复制的文本另存为文件，才能长期保留。
+
 ## English
 
 1. If startup protection appears, choose **Open workspace safely**. Create a new project with **New project**.

@@ -61,6 +61,23 @@ export type Snapshot = {
   reportTitle: string;
   createdAt: string;
 };
+export type ComparisonCell = {
+  optionId: string;
+  criterionId: string;
+  value: string;
+  kind: "fact" | "judgment" | "unknown";
+  evidence: Evidence[];
+  reviewedAt?: string;
+};
+export type Comparison = {
+  objective: string;
+  constraints: string;
+  options: { id: string; name: string; sourceIds: string[] }[];
+  criteria: { id: string; name: string }[];
+  cells: ComparisonCell[];
+  recommendation: string;
+  limitations: string;
+};
 export type Project = {
   id: string;
   name: string;
@@ -75,6 +92,7 @@ export type Project = {
   research?: ResearchState;
   reading?: ReadingPosition;
   lastView?: string;
+  comparison?: Comparison;
 };
 export type WorkspaceData = {
   schemaVersion: 1;

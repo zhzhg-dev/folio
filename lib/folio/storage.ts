@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from "dexie";
 import { type WorkspaceData, seedWorkspace } from "./model";
 import { upgradePreferences } from "./preferences";
+import { comparisonExample } from "./comparison";
 const db = new Dexie("folio-workspace") as Dexie & {
   workspaces: EntityTable<
     { id: string; data: WorkspaceData; revision?: number },
@@ -12,7 +13,10 @@ let expectedRevision = 0;
 export async function loadWorkspace() {
   const row = await db.workspaces.get("main");
   expectedRevision = row?.revision || 0;
-  return row?.data ? upgradePreferences(row.data) : seedWorkspace();
+  if (row?.data) return upgradePreferences(row.data);
+  const data = seedWorkspace();
+  const example = comparisonExample("en");
+  return { ...data, projects: [example], activeId: example.id };
 }
 export async function saveWorkspace(data: WorkspaceData) {
   await db.transaction("rw", db.workspaces, async () => {

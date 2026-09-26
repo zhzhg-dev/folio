@@ -30,6 +30,7 @@ import {
   Languages,
   ArrowRight,
   MessageSquare,
+  Columns3,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -73,12 +74,20 @@ import {
   type ResearchState,
 } from "@/lib/folio/model";
 import { loadWorkspace, saveWorkspace } from "@/lib/folio/storage";
+import { createAutosave } from "@/lib/folio/autosave";
 import DocumentEditor from "./document-editor";
 import FeatureDialog from "./feature-dialog";
 import SourceDetail from "./source-detail";
 import Assistant from "./assistant";
 import ProjectGuide from "./project-guide";
 import ReviewView from "./review-view";
+import ComparisonView from "./comparison-view";
+import {
+  emptyComparison,
+  comparisonExample,
+  comparisonBrief,
+  comparisonProgress,
+} from "@/lib/folio/comparison";
 import {
   exportMarkdown,
   exportWord,
@@ -151,6 +160,7 @@ export default function Workspace({
   if (dialog) dialogRef.current = dialog;
   const dialogKind = dialog || dialogRef.current;
   const [newName, setNewName] = useState("");
+  const [newTemplate, setNewTemplate] = useState("comparison");
   const [query, setQuery] = useState("");
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
   const [selectedQuote, setSelectedQuote] = useState("");
@@ -167,7 +177,11 @@ export default function Workspace({
     after: Project["content"];
   } | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
-  const saveChain = useRef(Promise.resolve());
+  const autosave = useRef<ReturnType<
+    typeof createAutosave<WorkspaceData>
+  > | null>(null);
+  const languageRef = useRef(data.language);
+  languageRef.current = data.language;
   const project =
     data.projects.find((p) => p.id === data.activeId) || data.projects[0];
   const t = useCallback(
@@ -203,27 +217,24 @@ export default function Workspace({
     if (loaded) workspaceReady?.();
   }, [loaded, workspaceReady]);
   useEffect(() => {
-    if (!loaded) return;
-    setSaving("saving");
-    const timeout = setTimeout(() => {
-      saveChain.current = saveChain.current
-        .catch(() => {})
-        .then(() => saveWorkspace(data))
-        .then(() => setSaving("saved"))
-        .catch((error: unknown) => {
-          setSaving("error");
-          toast.error(
-            error instanceof Error
-              ? errorMessage(error, data.language)
-              : t(
-                  "保存失败，请导出备份",
-                  "Save failed. Please export a backup.",
-                ),
-          );
-        });
-    }, 450);
-    return () => clearTimeout(timeout);
-  }, [data, loaded, t]);
+    const queue = createAutosave(saveWorkspace, (state, error) => {
+      setSaving(state);
+      if (state === "error")
+        toast.error(errorMessage(error, languageRef.current));
+    });
+    autosave.current = queue;
+    const flush = () => {
+      if (document.hidden) void queue.flush();
+    };
+    document.addEventListener("visibilitychange", flush);
+    return () => {
+      queue.dispose();
+      document.removeEventListener("visibilitychange", flush);
+    };
+  }, []);
+  useEffect(() => {
+    if (loaded) autosave.current?.schedule(data);
+  }, [data, loaded]);
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1100px)");
     const change = () => setRightOpen(media.matches);
@@ -235,8 +246,8 @@ export default function Workspace({
     document.documentElement.lang = data.language === "zh" ? "zh-CN" : "en";
     document.title =
       data.language === "zh"
-        ? "Folio · 给想法留一点空间"
-        : "Folio — A quieter place for your ideas";
+        ? "Folio · 研究与决策"
+        : "Folio — Research & decisions";
   }, [data.language]);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -252,6 +263,7 @@ export default function Workspace({
   useEffect(() => {
     if (saving === "saved") return;
     const beforeUnload = (e: BeforeUnloadEvent) => {
+      void autosave.current?.flush();
       e.preventDefault();
       e.returnValue = "";
     };
@@ -363,7 +375,7 @@ export default function Workspace({
             : s,
         ),
       });
-      setView("review");
+      setView(project.comparison ? "comparison" : "review");
       setSelectedSource(null);
       setReplacing(null);
       toast.success(
@@ -553,6 +565,10 @@ export default function Workspace({
   const createProject = () => {
     if (!newName.trim()) return;
     const next = makeProject(newName.trim(), data.language);
+    if (newTemplate === "comparison") {
+      next.comparison = emptyComparison(data.language);
+      next.lastView = "comparison";
+    }
     setData((current) => ({
       ...current,
       projects: [...current.projects, next],
@@ -561,7 +577,45 @@ export default function Workspace({
     setNewName("");
     setDialog(null);
     setSelectedSource(null);
-    setView("editor");
+    setView(next.lastView || "editor");
+  };
+  const addComparisonExample = () => {
+    const next = comparisonExample(data.language);
+    setData((current) => ({
+      ...current,
+      projects: [...current.projects, next],
+      activeId: next.id,
+    }));
+    setSelectedSource(null);
+    setDialog(null);
+    setView("comparison");
+  };
+  const buildComparisonBrief = () => {
+    try {
+      const nodes = comparisonBrief(project, data.language);
+      const before = structuredClone(project.content);
+      const after = {
+        ...before,
+        content: [...(before.content || []), ...nodes],
+      };
+      updateProject({
+        content: after,
+        snapshots: [
+          snapshot(t("写入比较简报之前", "Before adding decision brief")),
+          ...project.snapshots,
+        ],
+      });
+      setUndoInsertion({ projectId: project.id, before, after });
+      setView("editor");
+      toast.success(
+        t(
+          "简报已写入。请检查建议和待确认事项。",
+          "Brief added. Review the recommendation and open questions.",
+        ),
+      );
+    } catch (error) {
+      toast.error(errorMessage(error, data.language));
+    }
   };
   const downloadMarkdown = () => {
     exportMarkdown(project, data.language);
@@ -666,6 +720,21 @@ export default function Workspace({
             <kbd>⌘ K</kbd>
           </button>
           <nav className="main-nav" aria-label={t("主导航", "Main navigation")}>
+            <button
+              className={view === "comparison" ? "active" : ""}
+              onClick={() => {
+                setView("comparison");
+                setSelectedSource(null);
+              }}
+            >
+              <Columns3 size={18} />
+              {t("比较与决策", "Compare & decide")}
+              {comparisonProgress(project).changed > 0 && (
+                <span className="changes-count">
+                  {comparisonProgress(project).changed}
+                </span>
+              )}
+            </button>
             <button
               className={view === "research" ? "active" : ""}
               onClick={() => {
@@ -881,7 +950,7 @@ export default function Workspace({
             </DropdownMenu>
           </div>
         </header>
-        {!focus && (
+        {!focus && view !== "comparison" && (
           <ProjectGuide
             project={project}
             language={data.language}
@@ -894,7 +963,20 @@ export default function Workspace({
             backingUp={exporting}
           />
         )}
-        {view === "editor" ? (
+        {view === "comparison" ? (
+          <ComparisonView
+            key={project.id}
+            project={project}
+            language={data.language}
+            onChange={(comparison) => updateProject({ comparison })}
+            onImport={() => {
+              setUpdateSourceId(null);
+              setDialog("import");
+            }}
+            onExample={addComparisonExample}
+            onBuild={buildComparisonBrief}
+          />
+        ) : view === "editor" ? (
           <>
             <div className="editor-toolbar">
               <div className="format-tools">
@@ -1444,7 +1526,7 @@ export default function Workspace({
                   activeId: p.id,
                 }));
                 setSelectedSource(null);
-                setView("editor");
+                setView(p.comparison ? "comparison" : "editor");
                 toast.success(t("项目已恢复", "Project restored"));
               }}
               onSnapshot={saveSnapshot}
@@ -1472,6 +1554,7 @@ export default function Workspace({
               <input
                 autoFocus
                 className="field-input"
+                aria-label={t("项目名称", "Project name")}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder={t(
@@ -1479,6 +1562,30 @@ export default function Workspace({
                   "e.g. Your next research note",
                 )}
               />
+              <label className="field-label project-template">
+                {t("项目类型", "Project type")}
+                <select
+                  value={newTemplate}
+                  onChange={(e) => setNewTemplate(e.target.value)}
+                >
+                  <option value="comparison">
+                    {t("方案比较与研究简报", "Comparison & decision brief")}
+                  </option>
+                  <option value="writing">
+                    {t("自由研究与写作", "Open research & writing")}
+                  </option>
+                </select>
+              </label>
+              <button
+                type="button"
+                className="comparison-example-link"
+                onClick={addComparisonExample}
+              >
+                {t(
+                  "先体验一个完整的比较示例",
+                  "Explore a complete comparison sample",
+                )}
+              </button>
               <button
                 className="primary-button dialog-submit"
                 disabled={!newName.trim()}
