@@ -1,4 +1,14 @@
-# Folio 0.3 verification
+# Folio 0.3.1 verification
+
+## 0.3.1 startup incident and mitigation
+
+The user reported repeated desktop-client freezes immediately after the embedded page finished loading, accompanied by sustained fan activity, including after restarting the client. Closing the embedded tab before loading completed prevented the symptom. They had not enabled local AI. A Windows Application Hang event (1002) recorded ChatGPT.exe becoming unresponsive at 2026-09-26 13:58 local time. The prior preview-close tool call timed out; successful closure was not established.
+
+The original freeze has **not** been reproduced or profiled. The in-app page was deliberately not reopened during this mitigation. Its exact cause, and whether the host itself contributes, remain unresolved.
+
+Mitigations: a lightweight startup gate before workspace imports on first use/unclean exit; an explicit safe-start URL; no automatic PDF restoration; manual PDF preview with a release control; border-box resize measurement, stable scrollbar space, bounded canvas pixels, and linear text normalization; sequential core-only offline caching with optional assets cached on demand. Safe sessions skip browser-tool registration and new offline-worker registration. Existing documents and source blobs are preserved.
+
+Eight new automated regression tests cover an actual startup-entry import gate, recovery after abnormal exit, clean exit, multi-tab marker ownership, blocked storage, stable PDF sizing, canvas limits, long/emoji PDF text, and sequential core-only caching. The import-gate test runs transpiled application entry code in an isolated JavaScript context and verifies that the workspace is not imported before a click, and is imported only once after a double click. These tests do not establish that the reported client hang is fixed. Earlier browser checks below describe the 0.3 workflow, not a fresh 0.3.1 browser verification.
 
 Checked on 2026-09-26 with Node.js 24 and the Codex Chromium-based in-app browser on Windows.
 

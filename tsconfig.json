@@ -35,7 +35,8 @@
     "components/**/*.tsx",
     "lib/**/*.ts",
     "hooks/**/*.ts",
-    "main.tsx",
+    "main.ts",
+    "render.tsx",
     "vite.config.ts"
   ],
   "exclude": [

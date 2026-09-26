@@ -5,6 +5,7 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { Language } from "@/lib/folio/model";
 import { matchingPdfItems } from "@/lib/folio/pdf-text";
 import { errorMessage } from "@/lib/folio/i18n";
+import { pdfContainerWidth, pdfRenderSize } from "@/lib/folio/pdf-layout";
 
 export default function PdfReader({
   file,
@@ -57,11 +58,23 @@ export default function PdfReader({
   }, [file]);
   useEffect(() => {
     if (!host.current) return;
-    const observer = new ResizeObserver((entries) =>
-      setWidth(Math.max(150, entries[0].contentRect.width - 2)),
-    );
-    observer.observe(host.current);
-    return () => observer.disconnect();
+    let frame = 0;
+    const observer = new ResizeObserver(([entry]) => {
+      const borderWidth =
+        entry.borderBoxSize?.[0]?.inlineSize ??
+        host.current?.getBoundingClientRect().width;
+      if (!borderWidth) return;
+      const next = pdfContainerWidth(borderWidth);
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() =>
+        setWidth((previous) => (previous === next ? previous : next)),
+      );
+    });
+    observer.observe(host.current, { box: "border-box" });
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
   }, []);
   useEffect(() => {
     if (!pdf || !canvas.current) return;
@@ -75,11 +88,18 @@ export default function PdfReader({
       const p = await pdf.getPage(page);
       if (cancelled) return;
       const base = p.getViewport({ scale: 1 });
-      const viewport = p.getViewport({ scale: (width / base.width) * zoom });
+      const layout = pdfRenderSize(
+        width,
+        base.width,
+        base.height,
+        zoom,
+        window.devicePixelRatio || 1,
+      );
+      const viewport = p.getViewport({ scale: layout.scale });
       const target = canvas.current!;
-      const ratio = Math.min(window.devicePixelRatio || 1, 2);
-      target.width = Math.ceil(viewport.width * ratio);
-      target.height = Math.ceil(viewport.height * ratio);
+      const ratio = layout.ratio;
+      target.width = layout.pixelWidth;
+      target.height = layout.pixelHeight;
       target.style.width = viewport.width + "px";
       target.style.height = viewport.height + "px";
       setSize({ width: viewport.width, height: viewport.height });
@@ -89,7 +109,13 @@ export default function PdfReader({
         transform: [ratio, 0, 0, ratio, 0, 0],
       });
       await render.promise;
+      if (cancelled) return;
+      if (!quote) {
+        setBusy(false);
+        return;
+      }
       const content = await p.getTextContent();
+      if (cancelled) return;
       const items = content.items.filter(
         (i): i is import("pdfjs-dist/types/src/display/api").TextItem =>
           "str" in i,

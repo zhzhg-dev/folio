@@ -18,6 +18,7 @@ export function useWebMCP(
   const current = useRef({ project, projects, onOpen });
   current.current = { project, projects, onOpen };
   useEffect(() => {
+    if (document.documentElement.dataset.folioSafe === "true") return;
     const context = (
       document as Document & {
         modelContext?: {

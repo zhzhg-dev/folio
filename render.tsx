@@ -8,4 +8,7 @@ import "@fontsource-variable/noto-sans-sc";
 import "./app/globals.css";
 import "./app/atelier.css";
 import "./app/research.css";
-createRoot(document.getElementById("root")!).render(<Home />);
+
+export function renderWorkspace(root: HTMLElement) {
+  createRoot(root).render(<Home />);
+}

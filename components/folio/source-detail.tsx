@@ -69,6 +69,8 @@ export default function SourceDetail({
     source.versions.find((v) => v.id === selected) || source.versions.at(-1)!;
   const [page, setPage] = useState(initialPage);
   const [large, setLarge] = useState(false);
+  const [previewVersion, setPreviewVersion] = useState<string | null>(null);
+  const showPreview = previewVersion === version.id;
   const current =
     version.pages.find((p) => p.page === page) || version.pages[0];
   const quotedPage = version.pages.find((p) => quote && p.text.includes(quote));
@@ -213,13 +215,30 @@ export default function SourceDetail({
               </button>
             )}
           </div>
-          {!large && (
+          {!large && showPreview && (
             <PdfReader
               file={version.original!}
               page={current.page}
               quote={quote}
               language={language}
             />
+          )}
+          {!large && !showPreview && (
+            <button
+              className="secondary-button"
+              onClick={() => setPreviewVersion(version.id)}
+            >
+              <FileText size={15} />
+              {t("加载 PDF 预览", "Load PDF preview")}
+            </button>
+          )}
+          {!large && showPreview && (
+            <button
+              className="text-action"
+              onClick={() => setPreviewVersion(null)}
+            >
+              {t("关闭预览，释放资源", "Close preview and free resources")}
+            </button>
           )}
         </>
       )}

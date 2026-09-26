@@ -629,10 +629,13 @@ html[lang="zh-CN"] .research-empty h2 {
   width: 100%;
   max-height: 65dvh;
   overflow: auto;
+  scrollbar-gutter: stable;
+  contain: inline-size;
   border: 1px solid #e0e3d9;
   background: #eeefe9;
   overscroll-behavior: contain;
 }
+.pdf-reader { min-width: 0; max-width: 100%; }
 .pdf-sheet {
   position: relative;
   background: #fff;

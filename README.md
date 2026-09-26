@@ -62,7 +62,15 @@ Documents, original source files, and history stay in IndexedDB in the current b
 
 Core features make no paid API calls. Local AI needs an initial model download and consumes your device's memory, GPU resources, and storage. Model hosts receive ordinary download requests; your source text is not sent to them for inference. Hardware compatibility and download availability vary.
 
-After a complete first online load, the production app caches its shell for offline writing. Offline AI additionally requires successfully downloaded model assets to remain cached. Private preview authentication and the first visit still require a connection.
+Normal startup caches the small application shell sequentially. Optional PDF, AI and font resources are cached as used, rather than downloaded all at once. Offline use requires the relevant resources to have been cached. Safe startup does not register an offline worker. Private preview authentication and the first visit still require a connection.
+
+### Startup protection (0.3.1)
+
+The first visit after this update, or a visit following an interrupted session, pauses on a lightweight recovery page before importing the workspace. Use `?safe=1` to request that page explicitly. Opening safely pauses optional browser integrations and new offline-worker registration for that session. Saved documents are not removed. An additional tab can also trigger this precautionary screen.
+
+Saved reading positions remain available through Resume reading, but do not open a PDF during startup. Original PDF previews require a click and can be closed to free resources. The renderer uses stable container measurements and bounded canvas allocations.
+
+This release addresses risky startup/rendering paths after a reported desktop-client hang. Automated checks validate the guards; the original host freeze has not been reproduced or confirmed resolved. Do not treat the patch as evidence of a diagnosed root cause.
 
 ## Current limits
 

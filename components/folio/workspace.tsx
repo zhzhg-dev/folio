@@ -182,14 +182,7 @@ export default function Workspace() {
         setData(v);
         const active = v.projects.find((p) => p.id === v.activeId);
         setView(active?.lastView || "editor");
-        if (active?.reading) {
-          const r = active.reading;
-          setSelectedSource(
-            active.sources.find((s) => s.id === r.sourceId) || null,
-          );
-          setSelectedVersionId(r.versionId);
-          setSelectedQuote(r.quote);
-        }
+        // Keep the saved position, but resume the reader only on user request.
         setLoaded(true);
       })
       .catch(() => {
@@ -256,7 +249,11 @@ export default function Workspace() {
     return () => window.removeEventListener("beforeunload", beforeUnload);
   }, [saving]);
   useEffect(() => {
-    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
+    if (
+      process.env.NODE_ENV === "production" &&
+      "serviceWorker" in navigator &&
+      document.documentElement.dataset.folioSafe !== "true"
+    ) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
   }, []);

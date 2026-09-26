@@ -1,0 +1,51 @@
+.startup {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  box-sizing: border-box;
+  background: #f4f3ef;
+  color: #292b2a;
+  font:
+    16px/1.65 system-ui,
+    sans-serif;
+}
+.startup section {
+  max-width: 540px;
+}
+.startup-brand {
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -1px;
+}
+.startup h1 {
+  font-size: clamp(28px, 5vw, 38px);
+  line-height: 1.2;
+  letter-spacing: -1px;
+  margin: 36px 0 20px;
+}
+.startup p {
+  color: #60635f;
+}
+.startup button {
+  display: block;
+  margin: 28px 0 18px;
+  padding: 13px 20px;
+  border: 0;
+  border-radius: 8px;
+  background: #303a33;
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+.startup button:focus-visible {
+  outline: 3px solid #78917d;
+  outline-offset: 4px;
+}
+.startup small {
+  font-size: 14px;
+  color: #747871;
+}
+body:has(> #root > .startup) {
+  margin: 0;
+}
