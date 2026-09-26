@@ -1,12 +1,18 @@
 # Folio product priorities
 
+## 0.6 delivered: batch candidates and continuous review
+
+One coherent individual workflow now covers scoped batch candidate discovery, per-criterion search terms, focused review queues, explicit source-revision updates, manual confirmation and decision-brief delivery. Restore validation runs outside the page with cancellation. Ten fictional complete-task checks supplement the existing retrieval corpus; neither is an independent benchmark.
+
+The next release gate remains reliability in longer sessions: profile the unresolved freeze, verify full-size downloads in the embedded host, and evaluate real-world bilingual PDFs against an independently labeled corpus. No accounts, billing, team administration or user-recruitment campaign is introduced.
+
 ## 0.5 delivered: compare, review, deliver
 
 The initial professional use case is an individual comparing products or options and producing a sourced decision brief. This is a positioning hypothesis, not validated demand. Public-user recruitment remains deferred.
 
 The comparison workspace now records the research objective, constraints, options, criteria, typed findings, exact evidence and personal review marks. Linked-source search and original-page text support evidence selection. Source revisions flag related findings for manual review. A brief appends to the editor with a pre-insertion snapshot, citations, recommendation and unresolved items. Comparisons survive project backups. Pending saves are coalesced and do not report older writes as the latest saved work. Small backups have a copied-text recovery route.
 
-Next gates: independent evaluation on complete professional tasks; simpler review of the affected findings after a source revision; more representative mixed-language document/table handling; reliable full-size browser downloads; and a focused investigation of the original freeze. First confirm the whole task works before expanding into batch extraction or model-driven recommendations. Prepare distribution only after these quality gates; accounts, team permissions, billing, native mobile apps and automatic web research remain deferred.
+At 0.5, the next gates included simpler revision review and complete task checks; 0.6 delivers those as development acceptance work. Independent task evaluation, representative bilingual document/table handling, full-size downloads and investigation of the original freeze remain open. Prepare distribution only after these quality gates; accounts, team permissions, billing, native mobile apps and automatic web research remain deferred.
 
 The near-term goal is a dependable individual research workspace: keep sources, ask questions, verify evidence and write a document. English remains the default with Chinese available. Preserve local storage and optional on-device AI; no paid backend is required. Public-user recruitment is deferred at the owner's request.
 

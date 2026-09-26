@@ -97,7 +97,12 @@ export function validComparison(value: unknown): value is Comparison {
     c.criteria.length < 1 ||
     c.criteria.length > comparisonLimits.criteria ||
     !c.criteria.every(
-      (r) => r && str(r.id, 200) && !!r.id && str(r.name, 200),
+      (r) =>
+        r &&
+        str(r.id, 200) &&
+        !!r.id &&
+        str(r.name, 200) &&
+        (r.query === undefined || str(r.query, 500)),
     ) ||
     !unique(c.criteria.map((r) => r.id)) ||
     !Array.isArray(c.cells) ||

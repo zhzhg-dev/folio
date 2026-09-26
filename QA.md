@@ -1,5 +1,16 @@
 # Folio verification
 
+## 0.6 batch candidates and continuous review — 2026-09-26
+
+- Type checking, 78 automated tests, the 40-case retrieval development evaluation and production build pass. Ten new fictional tasks cover source creation, scoped evidence, manual review, briefs, Markdown and backup/restoration. These are development acceptance checks, not held-out evaluation or AI accuracy claims.
+- Browser: ran batch search on the three-option sample; five of nine cells had candidates and existing findings/review marks were unchanged. Opened the source-updated filter, explicitly moved two unchanged quotes to their current revision, checked their conditions manually, and used Save & next. The queue finished with 3/9 reviewed and no remaining source updates.
+- Exported the actual project and restored its 15,701-character backup through the new worker-backed text restore. The separate project retained 3/9 review status, sources and the previous brief. Reloading the production build retained this state and the language choice.
+- Production browser: batch search completed through the bundled worker; a newly appended brief showed 3/9 reviewed while the earlier 1/9 snapshot remained intact. No application warning or error appeared in the inspected console.
+- Checked English desktop at 1440px and Chinese mobile at 390px. Document width matched the viewport; the matrix scrolls within its own region. Review rows fit a narrow screen and preserve the original English source text when the interface is Chinese.
+- Synthetic Node workload: 1,890,000 source characters, 250 pages, six options and twelve criteria (72 cells) returned 216 candidates. Replacing repeated full-array sorting with bounded selection reduced one same-machine run from 23,098ms to 2,942ms. This is a repeated-text development fixture, not browser latency, a memory profile, or a general performance guarantee.
+- Batch search has one disposable worker, an 8-million-character guard and a 60-second deadline. Restore runs parsing, document validation and checksums in a disposable worker with a 120-second deadline. Lifecycle tests cover success, cancel, errors, deadline and late replies. Original-page text starts at 20,000 characters and expands on request.
+- Still open: the cause of the original full-client freeze; large-workspace persistence cost; successful full-size native downloads in the embedded browser; long-session profiling and independently labeled real documents. Actual browser cancellation under maximum load has not been separately profiled. The verified small text-restore route does not resolve native download interoperability.
+
 ## 0.5 comparisons and decision briefs — 2026-09-26
 
 - Type checking, 63 automated tests and the production build pass. Reloading the production build on the same localhost origin retained the restored comparison, the USD 18 finding and its reviewed mark. No warnings or errors appeared in the inspected application console. The startup entry remains 5.15 KB; optional AI is not loaded on entry.

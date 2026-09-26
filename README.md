@@ -6,9 +6,18 @@ A local-first research workspace for comparing options and writing evidence-back
 
 [简体中文](README.zh-CN.md) · [Verification](QA.md) · [MIT license](LICENSE)
 
-Folio opens in English. Switch between **English / 中文** in the sidebar or the mobile footer; your preference is remembered. Changing the interface language never translates or overwrites your writing.
+Folio opens in English. Switch between **English / 中文** in the sidebar including the mobile sidebar; your preference is remembered. Changing the interface language never translates or overwrites your writing.
 
-> **0.5 working preview.** Comparison, evidence review and decision briefs work together. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+> **0.6 working preview.** Comparison, evidence review and decision briefs work together. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+
+## New in 0.6
+
+- **Find evidence for all:** search every option's linked sources in one cancellable task. Each column reuses its source index; each cell gets up to three original candidate passages. Customize **Search terms** under a criterion when its name is too broad.
+- **Review queue:** filter source updates, unchecked findings, gaps or reviewed items. **Start review → Save & next** takes you through the selected unfinished findings without reopening the table each time.
+- **Review revisions:** see the saved quote beside a preview of the current page. An unchanged quote can be explicitly moved to the current revision; changed passages require choosing replacement evidence. Review marks always require a separate manual check.
+- **Safer restoration:** backup parsing, document validation and original-file checksums run in a cancellable worker. Canceling or closing the dialog cannot add a partially restored project. Long original pages expand in 20,000-character steps.
+
+Batch candidates are temporary and are cleared when leaving the comparison or changing its search inputs. They never overwrite findings, become reviewed automatically, or enter a brief without being attached. Search uses the latest source revisions, an 8-million-character batch limit and a 60-second deadline; backup restore has a 120-second deadline. Core workflows need no paid API or hosted database.
 
 ## New in 0.5
 

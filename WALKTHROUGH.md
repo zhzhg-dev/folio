@@ -6,6 +6,12 @@
 
 **中文：** 在“新建项目”选择“方案比较与研究简报”，或先体验完整示例。填写目标、约束、方案及比较维度，在表头关联资料。打开单元格，记录事实、个人判断或待确认信息；检索关联资料或直接查看原文，附上准确引用，核对表述与条件后手动标记。资料出现新版本后需要再次核对，旧证据仍保留。“写入研究简报”会先保存快照，再把比较表、建议、引用和待确认事项追加到写作页。随后可导出 Word、Markdown 或 HTML。完整项目使用 JSON 备份；2 MiB 以内的备份还可以“复制备份文本”，在“偏好与备份 → 从备份文本恢复”中还原。请把复制的文本另存为文件，才能长期保留。
 
+## Review a whole comparison / 连续核对
+
+**English:** Link each option's sources, then select **Find evidence for all**. Open **Search terms** under a criterion to use a concrete phrase such as “pricing” or “CSV export”. Choose **Source updated**, **Not reviewed** or **To confirm**, then **Start review**. Check the saved quote against the current page. Use **Use current version & recheck** only after checking its conditions, or search for a replacement. Update your finding, tick the manual review checkbox, and **Save & next**. Cancel closes the current draft without saving it; previously saved findings remain. Build a new brief when the review is ready; earlier briefs remain snapshots.
+
+**中文：** 关联资料后点击“批量找证据”；维度下的“检索词”可填写更具体的价格、导出等关键词。筛选“来源更新”“未核对”或“待确认”，点击“连续核对”。对照旧引用和当前原文，决定采用当前版本还是重新检索证据；编辑发现，人工勾选核对，然后“保存并继续”。取消只放弃当前未保存草稿，之前已保存的条目仍保留。核对完成后再生成新的简报，旧简报仍是之前的快照。
+
 ## English
 
 1. If startup protection appears, choose **Open workspace safely**. Create a new project with **New project**.

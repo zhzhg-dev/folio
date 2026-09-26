@@ -20,6 +20,12 @@ The baseline missed storage/retention paraphrases and Chinese queries for Englis
 
 Changes: complete-word alias activation, limited bilingual concept groups, conservative concept coverage, light English plural normalization, counted-token scoring, and latest-revision retrieval. Follow-up context influences ranking while the current question controls relevance. Generic summaries can sample passages; a topic-specific summary cannot bypass relevance filtering.
 
+## 0.6 task acceptance checks
+
+Ten fictional tasks in `tests/comparison-workflow.test.mjs` run through source creation, scoped batch search, explicitly authored review, brief generation, Markdown, backup and restoration. They include English, Chinese, two cross-language directions, annual/monthly terms, negative features, conditional access, retention, an unsupported topic and conflicting passages. Positive cases preserve a required phrase and exact source; the unsupported topic returns no passages. A later revision reopens review without erasing the prior brief. These are development acceptance tests, not independent evaluations or a measure of recommendation accuracy.
+
+Worker tests additionally verify cancellation, deadline cleanup, pre-aborted requests, late-result rejection and an oversized-text guard before allocation.
+
 ## Limits
 
 These cases were used while developing the change; they are not a held-out or external benchmark. The vocabulary covers a small set of project/document concepts, not general bilingual translation. Conservative filtering can miss relevant paraphrases, and summaries are bounded extracts rather than exhaustive coverage. No embedding model is used. This evaluation does not measure generated-answer correctness, semantic entailment, hallucination rate or performance on real users' documents. Separate worker tests verify cancellation, deadlines, disposal and lean payloads.

@@ -124,29 +124,12 @@ export function contextualQuery(question: string, previousQuestion?: string) {
     ? `${previousQuestion.slice(0, 220)}\n${question}`
     : question;
 }
-export function retrieve(
-  project: Project,
-  query: string,
-  selectedIds: string[],
-  context?: string,
-): Evidence[] {
+export function prepareRetrieval(project: Project, selectedIds: string[]) {
   const sources = project.sources.filter((s) => selectedIds.includes(s.id));
-  const topicQuery = sources.reduce(
-    (q, s) => q.replaceAll(s.name.toLowerCase(), " "),
-    query.toLowerCase(),
-  );
-  const queryTerms = [...new Set(terms(topicQuery))];
-  const units = queryUnits(topicQuery);
-  if (!units.length && context) return retrieve(project, context, selectedIds);
-  const contextTerms = context ? [...new Set(terms(context))] : [];
-  const allTerms = [...new Set(units.flat())];
-  const summary =
-    units.length === 0 &&
-    /\b(summarize|summary|overview|main ideas|key points)\b|总结|概括|主要观点|核心观点/.test(
-      query.toLowerCase(),
-    );
   const chunks = sources.flatMap((s) => {
-    const v = s.versions.at(-1)!;
+    const v = s.versions.at(-1);
+    if (!v) return [];
+    const title = terms(s.name);
     return v.pages.flatMap((p) =>
       chunkPage(p.text).map((quote) => ({
         sourceId: s.id,
@@ -156,11 +139,10 @@ export function retrieve(
         name: s.name,
         label: String(project.sources.indexOf(s) + 1),
         tokens: terms(quote),
-        title: terms(s.name),
+        title,
       })),
     );
   });
-  if (!chunks.length || (!allTerms.length && !summary)) return [];
   const avg =
     chunks.reduce((n, c) => n + c.tokens.length, 0) / chunks.length || 1;
   const tokenCounts = chunks.map((c) => {
@@ -168,13 +150,41 @@ export function retrieve(
     c.tokens.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1));
     return counts;
   });
+  return { chunks, avg, tokenCounts };
+}
+export function retrieve(
+  project: Project,
+  query: string,
+  selectedIds: string[],
+  context?: string,
+  prepared?: ReturnType<typeof prepareRetrieval>,
+): Evidence[] {
+  const sources = project.sources.filter((s) => selectedIds.includes(s.id));
+  const topicQuery = sources.reduce(
+    (q, s) => q.replaceAll(s.name.toLowerCase(), " "),
+    query.toLowerCase(),
+  );
+  const queryTerms = [...new Set(terms(topicQuery))];
+  const units = queryUnits(topicQuery);
+  if (!units.length && context)
+    return retrieve(project, context, selectedIds, undefined, prepared);
+  const contextTerms = context ? [...new Set(terms(context))] : [];
+  const allTerms = [...new Set(units.flat())];
+  const summary =
+    units.length === 0 &&
+    /\b(summarize|summary|overview|main ideas|key points)\b|总结|概括|主要观点|核心观点/.test(
+      query.toLowerCase(),
+    );
+  const { chunks, avg, tokenCounts } =
+    prepared || prepareRetrieval(project, selectedIds);
+  if (!chunks.length || (!allTerms.length && !summary)) return [];
   const frequencies = new Map(
     allTerms.map((term) => [
       term,
       tokenCounts.filter((c) => c.has(term)).length,
     ]),
   );
-  const scored = chunks
+  let scored = chunks
     .map((c, index) => {
       const counts = tokenCounts[index];
       const coverage =
@@ -217,16 +227,25 @@ export function retrieve(
     );
   const chosen: typeof scored = [];
   const bestScore = scored.reduce((best, c) => Math.max(best, c.score), 0);
+  // Drop weak candidates once, rather than repeatedly selecting and discarding them.
+  if (!summary) scored = scored.filter((c) => c.score >= bestScore * 0.3);
   let characters = 0;
   while (scored.length && chosen.length < 6 && characters < 2400) {
-    scored.sort((a, b) => {
-      const adjusted = (c: typeof a) =>
-        c.score /
-        (1 + chosen.filter((e) => e.sourceId === c.sourceId).length * 0.6);
-      return adjusted(b) - adjusted(a);
-    });
-    const next = scored.shift()!;
-    if (!summary && next.score < bestScore * 0.3) continue;
+    // Only six passages are needed. Avoid repeatedly sorting every source chunk.
+    const used = new Map<string, number>();
+    for (const e of chosen)
+      used.set(e.sourceId, (used.get(e.sourceId) || 0) + 1);
+    let bestIndex = 0,
+      bestAdjusted = -Infinity;
+    for (let i = 0; i < scored.length; i++) {
+      const adjusted =
+        scored[i].score / (1 + (used.get(scored[i].sourceId) || 0) * 0.6);
+      if (adjusted > bestAdjusted) {
+        bestIndex = i;
+        bestAdjusted = adjusted;
+      }
+    }
+    const [next] = scored.splice(bestIndex, 1);
     if (
       chosen.some(
         (c) =>

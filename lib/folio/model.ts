@@ -73,7 +73,7 @@ export type Comparison = {
   objective: string;
   constraints: string;
   options: { id: string; name: string; sourceIds: string[] }[];
-  criteria: { id: string; name: string }[];
+  criteria: { id: string; name: string; query?: string }[];
   cells: ComparisonCell[];
   recommendation: string;
   limitations: string;

@@ -34,6 +34,16 @@ import {
 import { evidenceExists } from "@/lib/folio/research";
 import { findPassagesAsync } from "@/lib/folio/research-task";
 import { errorMessage } from "@/lib/folio/i18n";
+import { findComparisonCandidates } from "@/lib/folio/comparison-task";
+import {
+  cellKey,
+  comparisonSearchKey,
+  reviewItems,
+  currentQuote,
+  type CandidateResult,
+  type CellAddress,
+  type ReviewFilter,
+} from "@/lib/folio/comparison-search";
 
 type Props = {
   project: Project;
@@ -53,6 +63,54 @@ export default function ComparisonView({
 }: Props) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
   const c = project.comparison;
+  const [filter, setFilter] = useState<ReviewFilter>("all");
+  const [queue, setQueue] = useState<CellAddress[]>([]);
+  const [candidates, setCandidates] = useState<{
+    key: string;
+    items: CandidateResult[];
+  } | null>(null);
+  const [batchProgress, setBatchProgress] = useState<number | null>(null);
+  const [batchError, setBatchError] = useState("");
+  const batch = useRef<AbortController | null>(null);
+  const searchKey = comparisonSearchKey(project);
+  const latestKey = useRef(searchKey);
+  latestKey.current = searchKey;
+  useEffect(() => {
+    batch.current?.abort();
+    setBatchProgress(null);
+    setBatchError("");
+    return () => batch.current?.abort();
+  }, [searchKey]);
+  const candidateItems = candidates?.key === searchKey ? candidates.items : [];
+  const visibleItems = reviewItems(project, filter);
+  const batchSearch = async () => {
+    batch.current?.abort();
+    const controller = new AbortController();
+    batch.current = controller;
+    const key = searchKey;
+    setBatchProgress(0);
+    setBatchError("");
+    try {
+      const items = await findComparisonCandidates(
+        project,
+        controller.signal,
+        (completed) => {
+          if (!controller.signal.aborted && latestKey.current === key)
+            setBatchProgress(completed);
+        },
+      );
+      if (!controller.signal.aborted && latestKey.current === key)
+        setCandidates({ key, items });
+    } catch (error) {
+      if (!controller.signal.aborted)
+        setBatchError(errorMessage(error, language));
+    } finally {
+      if (batch.current === controller) {
+        setBatchProgress(null);
+        batch.current = null;
+      }
+    }
+  };
   const [editing, setEditing] = useState<{
     optionId: string;
     criterionId: string;
@@ -183,8 +241,147 @@ export default function ComparisonView({
           {t("添加资料", "Add sources")}
         </button>
       </div>
+      <div className="comparison-workbar">
+        <div
+          className="comparison-filters"
+          aria-label={t("核对筛选", "Review filters")}
+        >
+          {(
+            ["all", "changed", "unreviewed", "missing", "reviewed"] as const
+          ).map((value) => (
+            <button
+              key={value}
+              aria-pressed={filter === value}
+              onClick={() => setFilter(value)}
+            >
+              {value === "all" ? t("全部", "All findings") : statusLabel(value)}
+              <span>{value === "all" ? counts.total : counts[value]}</span>
+            </button>
+          ))}
+        </div>
+        <div className="comparison-work-actions">
+          <button
+            className="secondary-button"
+            disabled={
+              !c.options.some((o) => o.sourceIds.length) ||
+              batchProgress !== null
+            }
+            onClick={() => void batchSearch()}
+          >
+            {batchProgress !== null ? (
+              <Loader2 size={16} className="spin" />
+            ) : (
+              <Search size={16} />
+            )}
+            {t("批量找证据", "Find evidence for all")}
+          </button>
+          <button
+            className="text-action"
+            disabled={!visibleItems.some((item) => item.status !== "reviewed")}
+            onClick={() => {
+              const items = visibleItems.filter(
+                (item) => item.status !== "reviewed",
+              );
+              setEditing(items[0]);
+              setQueue(items.slice(1));
+            }}
+          >
+            {t("连续核对", "Start review")}
+            <ArrowRight size={15} />
+          </button>
+        </div>
+      </div>
+      <div
+        className="comparison-search-status"
+        role="status"
+        aria-live="polite"
+      >
+        {batchProgress !== null ? (
+          <>
+            <span>
+              {t("正在查找候选片段", "Finding candidate passages")} ·{" "}
+              {batchProgress}/{counts.total}
+            </span>
+            <button
+              className="text-action"
+              onClick={() => {
+                batch.current?.abort();
+                setBatchProgress(null);
+              }}
+            >
+              {t("取消", "Cancel")}
+            </button>
+          </>
+        ) : candidateItems.length ? (
+          <span>
+            {candidateItems.filter((item) => item.evidence.length).length}/
+            {counts.total}{" "}
+            {t(
+              "项找到候选片段。请打开核对；未修改你的发现。",
+              "findings have candidates. Open to check; your findings are unchanged.",
+            )}
+            {candidateItems.some((item) => !item.linked) &&
+              " " +
+                t(
+                  "部分方案尚未关联资料。",
+                  "Some options have no linked sources.",
+                )}
+          </span>
+        ) : (
+          <span>
+            {t(
+              "按维度检索关联资料；可在维度名称下调整关键词。",
+              "Search linked sources by criterion. Refine terms below each criterion name.",
+            )}
+          </span>
+        )}
+      </div>
+      {batchError && (
+        <p className="inline-error" role="alert">
+          {batchError}
+        </p>
+      )}
+      {filter !== "all" && (
+        <div className="comparison-review-list">
+          {visibleItems.length ? (
+            visibleItems.map((item) => (
+              <button
+                key={cellKey(item)}
+                className="comparison-review-row"
+                onClick={() => {
+                  setQueue([]);
+                  setEditing(item);
+                }}
+              >
+                <span className={`cell-status ${item.status}`}>
+                  {statusLabel(item.status)}
+                </span>
+                <span>
+                  <strong>
+                    {item.option} <span className="dialog-slash">/</span>{" "}
+                    {item.criterion}
+                  </strong>
+                  <span>
+                    {item.cell?.value ||
+                      t("尚未记录发现", "No finding recorded")}
+                  </span>
+                </span>
+                <ArrowUpRight size={17} />
+              </button>
+            ))
+          ) : (
+            <p className="comparison-help">
+              {t(
+                "这里已经处理完了。切换筛选继续查看。",
+                "Nothing in this view. Choose another filter to continue.",
+              )}
+            </p>
+          )}
+        </div>
+      )}
       <div
         className="comparison-table-scroll"
+        hidden={filter !== "all"}
         tabIndex={0}
         role="region"
         aria-label={t("方案比较表", "Options comparison table")}
@@ -303,6 +500,22 @@ export default function ComparisonView({
                       <X size={14} />
                     </button>
                   </div>
+                  <details className="criterion-query">
+                    <summary>{t("检索词", "Search terms")}</summary>
+                    <input
+                      aria-label={t("检索词：", "Search terms: ") + r.name}
+                      maxLength={500}
+                      placeholder={r.name}
+                      value={r.query || ""}
+                      onChange={(e) =>
+                        change({
+                          criteria: c.criteria.map((x) =>
+                            x.id === r.id ? { ...x, query: e.target.value } : x,
+                          ),
+                        })
+                      }
+                    />
+                  </details>
                 </th>
                 {c.options.map((o) => {
                   const cell = c.cells.find(
@@ -314,9 +527,10 @@ export default function ComparisonView({
                       <button
                         className={`comparison-cell cell-${status}`}
                         aria-label={`${o.name} / ${r.name}`}
-                        onClick={() =>
-                          setEditing({ optionId: o.id, criterionId: r.id })
-                        }
+                        onClick={() => {
+                          setQueue([]);
+                          setEditing({ optionId: o.id, criterionId: r.id });
+                        }}
                       >
                         <span className="cell-topline">
                           <span className={`cell-status ${status}`}>
@@ -337,6 +551,14 @@ export default function ComparisonView({
                             ? `${cell.evidence.length} ${t("条引用", cell.evidence.length === 1 ? "citation" : "citations")}`
                             : t("尚未附上证据", "No evidence attached")}
                         </span>
+                        {!!candidateItems.find(
+                          (item) =>
+                            item.optionId === o.id && item.criterionId === r.id,
+                        )?.evidence.length && (
+                          <span className="cell-candidates">
+                            {t("候选证据可核对", "Candidates ready")}
+                          </span>
+                        )}
                       </button>
                     </td>
                   );
@@ -421,7 +643,16 @@ export default function ComparisonView({
           language={language}
           optionId={editing.optionId}
           criterionId={editing.criterionId}
-          onClose={() => setEditing(null)}
+          candidates={
+            candidateItems.find((item) => cellKey(item) === cellKey(editing))
+              ?.evidence || []
+          }
+          batchSearched={candidateItems.length > 0}
+          remaining={queue.length}
+          onClose={() => {
+            setEditing(null);
+            setQueue([]);
+          }}
           onSave={(cell) => {
             change({
               cells: [
@@ -433,7 +664,8 @@ export default function ComparisonView({
                 cell,
               ],
             });
-            setEditing(null);
+            setEditing(queue[0] || null);
+            setQueue(queue.slice(1));
           }}
         />
       )}
@@ -502,6 +734,9 @@ function CellEditor({
   language,
   optionId,
   criterionId,
+  candidates,
+  batchSearched,
+  remaining,
   onClose,
   onSave,
 }: {
@@ -510,6 +745,9 @@ function CellEditor({
   language: Language;
   optionId: string;
   criterionId: string;
+  candidates: Evidence[];
+  batchSearched: boolean;
+  remaining: number;
   onClose: () => void;
   onSave: (cell: ComparisonCell) => void;
 }) {
@@ -523,18 +761,20 @@ function CellEditor({
       ) || { optionId, criterionId, value: "", kind: "unknown", evidence: [] },
     ),
   );
-  const [query, setQuery] = useState(criterion.name);
-  const [results, setResults] = useState<Evidence[]>([]);
+  const [query, setQuery] = useState(criterion.query || criterion.name);
+  const [results, setResults] = useState<Evidence[]>(candidates);
   const [busy, setBusy] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [searched, setSearched] = useState(batchSearched);
   const [error, setError] = useState("");
   const [sourceId, setSourceId] = useState(
     option.sourceIds[0] || project.sources[0]?.id || "",
   );
   const [pageNumber, setPageNumber] = useState(1);
   const [quote, setQuote] = useState("");
+  const [pageLimit, setPageLimit] = useState(20000);
   const pending = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
+  useEffect(() => setPageLimit(20000), [sourceId, pageNumber]);
   const edit = (patch: Partial<ComparisonCell>) =>
     setCell((current) => ({ ...current, ...patch, reviewedAt: undefined }));
   const source = project.sources.find((s) => s.id === sourceId);
@@ -555,7 +795,7 @@ function CellEditor({
           x.quote === e.quote,
       )
     )
-      edit({ evidence: [...cell.evidence, e] });
+      edit({ evidence: [...cell.evidence, { ...e, id: uid() }] });
     setError("");
   };
   const search = async () => {
@@ -681,12 +921,69 @@ function CellEditor({
                 {project.sources
                   .find((s) => s.id === e.sourceId)
                   ?.versions.at(-1)?.id !== e.versionId && (
-                  <p className="needs-attention">
-                    {t(
-                      "资料已有新版本。请核对并替换为当前版本的引用。",
-                      "A newer source version exists. Check it and replace this citation with the current version.",
+                  <div className="citation-update">
+                    <p className="needs-attention">
+                      {currentQuote(e, project)
+                        ? t(
+                            "当前版本仍包含这段原文，请确认适用条件。",
+                            "This exact passage is still present. Check whether its conditions still apply.",
+                          )
+                        : t(
+                            "当前版本未找到相同原文，请重新核对。",
+                            "This passage is absent from the current version. Recheck your finding.",
+                          )}
+                    </p>
+                    <strong>
+                      {t("当前版本 · 同页预览", "Current version · same page")}
+                    </strong>
+                    <blockquote>
+                      {project.sources
+                        .find((s) => s.id === e.sourceId)
+                        ?.versions.at(-1)
+                        ?.pages.find((p) => p.page === e.page)
+                        ?.text.slice(0, 700) ||
+                        t(
+                          "页码已变化，请查看原文。",
+                          "Pagination changed. Open the original.",
+                        )}
+                    </blockquote>
+                    {currentQuote(e, project) && (
+                      <button
+                        className="text-action"
+                        onClick={() => {
+                          const updated = currentQuote(e, project);
+                          if (updated)
+                            edit({
+                              evidence: cell.evidence.map((x) =>
+                                x.id === e.id ? updated : x,
+                              ),
+                            });
+                        }}
+                      >
+                        {t(
+                          "引用当前版本，继续核对",
+                          "Use current version & recheck",
+                        )}
+                      </button>
                     )}
-                  </p>
+                    <button
+                      className="text-action"
+                      onClick={() => {
+                        setSourceId(e.sourceId);
+                        setPageNumber(e.page);
+                        setQuote("");
+                        document
+                          .getElementById("comparison-original-details")
+                          ?.setAttribute("open", "");
+                        document
+                          .getElementById("comparison-original-details")
+                          ?.scrollIntoView({ block: "nearest" });
+                      }}
+                    >
+                      {t("查看当前原文", "Read current source")}
+                      <ArrowUpRight size={14} />
+                    </button>
+                  </div>
                 )}
                 {!evidenceExists(e, project) && (
                   <p className="needs-attention">
@@ -722,6 +1019,14 @@ function CellEditor({
           </div>
           <aside className="cell-evidence-picker">
             <h3>{t("查找依据", "Find the evidence")}</h3>
+            {!!candidates.length && (
+              <p className="comparison-help">
+                {t(
+                  "已带入批量检索的候选片段；它们尚未关联到发现。",
+                  "Batch candidates are ready below. They are not attached to your finding yet.",
+                )}
+              </p>
+            )}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -785,9 +1090,45 @@ function CellEditor({
                   <Plus size={14} />
                   {t("关联此段", "Attach passage")}
                 </button>
+                {cell.evidence.some(
+                  (x) =>
+                    x.sourceId === e.sourceId && x.versionId !== e.versionId,
+                ) && (
+                  <button
+                    className="text-action"
+                    onClick={() =>
+                      edit({
+                        evidence: [
+                          ...cell.evidence.filter(
+                            (x) =>
+                              !(
+                                x.sourceId === e.sourceId &&
+                                x.versionId !== e.versionId
+                              ),
+                          ),
+                          ...(!cell.evidence.some(
+                            (x) =>
+                              x.sourceId === e.sourceId &&
+                              x.versionId === e.versionId &&
+                              x.page === e.page &&
+                              x.quote === e.quote,
+                          )
+                            ? [{ ...e, id: uid() }]
+                            : []),
+                        ],
+                      })
+                    }
+                  >
+                    {t(
+                      "替换此资料的旧引用",
+                      "Replace older citations from this source",
+                    )}
+                  </button>
+                )}
               </article>
             ))}
             <details
+              id="comparison-original-details"
               className="manual-evidence"
               open={!option.sourceIds.length || undefined}
             >
@@ -830,7 +1171,19 @@ function CellEditor({
                       ))}
                     </select>
                   </label>
-                  <pre className="comparison-original">{page?.text}</pre>
+                  <pre className="comparison-original">
+                    {page?.text.slice(0, pageLimit)}
+                  </pre>
+                  {!!page && page.text.length > pageLimit && (
+                    <button
+                      className="text-action"
+                      onClick={() => setPageLimit((current) => current + 20000)}
+                    >
+                      {t("展开后续原文", "Show more of this page")} ·{" "}
+                      {pageLimit.toLocaleString()}/
+                      {page.text.length.toLocaleString()}
+                    </button>
+                  )}
                   <label>
                     <span>
                       {t(
@@ -906,7 +1259,9 @@ function CellEditor({
             }
           >
             <Check size={15} />
-            {t("保存发现", "Save finding")}
+            {remaining
+              ? t("保存并继续", "Save & next") + ` · ${remaining}`
+              : t("保存发现", "Save finding")}
           </button>
         </div>
       </DialogContent>

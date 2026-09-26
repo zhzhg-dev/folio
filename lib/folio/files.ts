@@ -8,18 +8,12 @@ import {
   type Language,
 } from "./model.ts";
 import type { JSONContent } from "@tiptap/react";
-import { validResearch } from "./research.ts";
-import { validComparison } from "./comparison.ts";
+import { hashBytes } from "./file-hash.ts";
+export { hashBytes } from "./file-hash.ts";
+export { restoreBackup } from "./backup-restore.ts";
 import { prepareBackup, saveDownload } from "./backup-export.ts";
 export function download(blob: Blob, name: string) {
   saveDownload(blob, name);
-}
-export async function hashBytes(bytes: ArrayBuffer) {
-  return Array.from(
-    new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
-  )
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
 }
 export async function readFile(file: File): Promise<Source> {
   if (file.size > 20 * 1024 * 1024)
@@ -346,79 +340,4 @@ export async function exportWord(project: Project, language: Language = "en") {
 }
 export async function exportBackup(project: Project) {
   download(await prepareBackup(project), `${project.name}.folio.json`);
-}
-export async function restoreBackup(file: File): Promise<Project> {
-  if (file.size > 150 * 1024 * 1024)
-    throw new Error("备份过大 / Backup too large");
-  const data = JSON.parse(await file.text());
-  if (
-    data.format !== "folio-project" ||
-    data.schemaVersion !== 1 ||
-    !data.project ||
-    typeof data.project.name !== "string" ||
-    data.project.content?.type !== "doc" ||
-    !Array.isArray(data.project.sources) ||
-    !Array.isArray(data.project.snapshots)
-  )
-    throw new Error("不是有效的 Folio 项目备份 / Invalid Folio backup");
-  const p = data.project;
-  if (p.comparison !== undefined && !validComparison(p.comparison))
-    throw new Error("备份中的比较记录无效 / Invalid comparison in backup");
-  if (p.research !== undefined && !validResearch(p.research))
-    throw new Error(
-      "备份中的问答记录无效 / Invalid research history in backup",
-    );
-  if (
-    p.reading !== undefined &&
-    (!p.reading ||
-      typeof p.reading.sourceId !== "string" ||
-      typeof p.reading.versionId !== "string" ||
-      typeof p.reading.quote !== "string" ||
-      !Number.isInteger(p.reading.page) ||
-      p.reading.page < 1)
-  )
-    throw new Error(
-      "备份中的阅读位置无效 / Invalid reading position in backup",
-    );
-  for (const s of p.sources) {
-    if (
-      typeof s.id !== "string" ||
-      typeof s.name !== "string" ||
-      !Array.isArray(s.versions) ||
-      !s.versions.length
-    )
-      throw new Error("资料结构无效 / Invalid source");
-    for (const v of s.versions) {
-      if (
-        typeof v.text !== "string" ||
-        typeof v.id !== "string" ||
-        !Array.isArray(v.pages) ||
-        !v.pages.length ||
-        v.pages.some(
-          (page: { page: unknown; text: unknown }) =>
-            !Number.isInteger(page.page) ||
-            Number(page.page) < 1 ||
-            typeof page.text !== "string",
-        )
-      )
-        throw new Error("资料版本无效 / Invalid version");
-      if (v.originalBase64) {
-        const bytes = Uint8Array.from(atob(v.originalBase64), (c) =>
-          c.charCodeAt(0),
-        );
-        if ((await hashBytes(bytes.buffer)) !== v.hash)
-          throw new Error("备份文件校验失败 / Backup checksum failed");
-        v.original = new Blob([bytes], {
-          type: s.kind === "pdf" ? "application/pdf" : "text/plain",
-        });
-        delete v.originalBase64;
-      }
-    }
-  }
-  return {
-    ...p,
-    id: uid(),
-    name: `${p.name} · restored`,
-    updatedAt: new Date().toISOString(),
-  };
 }

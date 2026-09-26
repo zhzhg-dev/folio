@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Upload,
   FileText,
@@ -12,13 +12,8 @@ import {
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import {
-  readFile,
-  sourceFromText,
-  restoreBackup,
-  exportBackup,
-} from "@/lib/folio/files";
-import { validateDocument } from "@/lib/folio/integrity";
+import { readFile, sourceFromText, exportBackup } from "@/lib/folio/files";
+import { restoreBackupAsync } from "@/lib/folio/restore-task";
 import { errorMessage } from "@/lib/folio/i18n";
 import type { Project, Source, Language } from "@/lib/folio/model";
 export default function FeatureDialog({
@@ -49,6 +44,9 @@ export default function FeatureDialog({
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
   const [backupText, setBackupText] = useState("");
+  const [restoring, setRestoring] = useState(false);
+  const restoreJob = useRef<AbortController | null>(null);
+  useEffect(() => () => restoreJob.current?.abort(), []);
   const input = useRef<HTMLInputElement>(null);
   const restoreInput = useRef<HTMLInputElement>(null);
   const perform = async (fn: () => Promise<void>) => {
@@ -81,16 +79,24 @@ export default function FeatureDialog({
   const restore = (file?: File) =>
     perform(async () => {
       if (!file) return;
-      const p = await restoreBackup(file);
-      if (
-        !validateDocument(p.content) ||
-        p.snapshots.some((s) => !validateDocument(s.content))
-      )
-        throw new Error(
-          t("备份中的文档结构无效", "Invalid document in backup"),
-        );
-      onRestore(p);
-      onClose();
+      restoreJob.current?.abort();
+      const controller = new AbortController();
+      restoreJob.current = controller;
+      setRestoring(true);
+      try {
+        const p = await restoreBackupAsync(file, controller.signal);
+        if (!controller.signal.aborted) {
+          onRestore(p);
+          onClose();
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) throw error;
+      } finally {
+        if (restoreJob.current === controller) {
+          restoreJob.current = null;
+          setRestoring(false);
+        }
+      }
     });
   if (kind === "settings")
     return (
@@ -182,8 +188,20 @@ export default function FeatureDialog({
             {t("恢复此备份", "Restore this backup")}
           </button>
         </details>
+        {restoring && (
+          <div className="comparison-search-status" role="status">
+            <Loader2 size={16} className="spin" />
+            <span>{t("正在校验备份…", "Checking your backup…")}</span>
+            <button
+              className="text-action"
+              onClick={() => restoreJob.current?.abort()}
+            >
+              {t("取消恢复", "Cancel restore")}
+            </button>
+          </div>
+        )}
         <p className="small-copy">
-          Folio 0.5.0 · {t("个人工作空间", "Personal workspace")}
+          Folio 0.6.0 · {t("个人工作空间", "Personal workspace")}
         </p>
         {error && (
           <p className="inline-error" role="alert">
