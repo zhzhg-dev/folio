@@ -93,6 +93,21 @@ export type Project = {
   reading?: ReadingPosition;
   lastView?: string;
   comparison?: Comparison;
+  notebook?: Notebook;
+};
+export type Finding = {
+  id: string;
+  questionId: string;
+  value: string;
+  kind: ComparisonCell["kind"];
+  evidence: Evidence[];
+  note: string;
+  reviewedAt?: string;
+};
+export type Notebook = {
+  objective: string;
+  questions: { id: string; title: string }[];
+  findings: Finding[];
 };
 export type WorkspaceData = {
   schemaVersion: 1;

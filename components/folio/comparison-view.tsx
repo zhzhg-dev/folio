@@ -728,7 +728,7 @@ export default function ComparisonView({
   );
 }
 
-function CellEditor({
+export function CellEditor({
   project,
   comparison,
   language,
@@ -1053,8 +1053,8 @@ function CellEditor({
             <p className="comparison-help">
               {option.sourceIds.length
                 ? t(
-                    "仅搜索此方案关联的资料；结果是原文片段。",
-                    "Searches only sources linked to this option. Results are original passages.",
+                    "仅搜索这里关联的资料；结果是原文片段。",
+                    "Searches the linked sources. Results are original passages.",
                   )
                 : t(
                     "先在表头关联资料，或在下方直接查看原文。",
@@ -1250,6 +1250,7 @@ function CellEditor({
           </button>
           <button
             className="primary-button"
+            disabled={!cell.value.trim()}
             onClick={() =>
               onSave({
                 ...cell,

@@ -44,6 +44,7 @@ export default function SourceDetail({
   initialPage = 1,
   onPosition,
   expanded = false,
+  backLabel,
 }: {
   source: Source;
   quote: string;
@@ -60,6 +61,7 @@ export default function SourceDetail({
   initialPage?: number;
   onPosition?: (position: ReadingPosition) => void;
   expanded?: boolean;
+  backLabel?: string;
 }) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
   const [selected, setSelected] = useState(
@@ -124,7 +126,7 @@ export default function SourceDetail({
     <>
       <button className="back-source" onClick={onBack}>
         <ArrowLeft size={14} />
-        {t("返回资料", "Back to sources")}
+        {backLabel || t("返回资料", "Back to sources")}
       </button>
       <div className="source-detail-title">
         <div className={`source-file-icon ${source.color}`}>

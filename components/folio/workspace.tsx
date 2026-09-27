@@ -79,12 +79,20 @@ import DocumentEditor from "./document-editor";
 import FeatureDialog from "./feature-dialog";
 import SourceDetail from "./source-detail";
 import Assistant from "./assistant";
-import ProjectGuide from "./project-guide";
+import ResearchNotebook from "./research-notebook";
+import {
+  emptyNotebook,
+  notebookExample,
+  notebookFor,
+  findingNodes,
+  findingsFromDraft,
+  notebookLimits,
+} from "@/lib/folio/notebook";
+import type { Finding } from "@/lib/folio/model";
 import ReviewView from "./review-view";
 import ComparisonView from "./comparison-view";
 import {
   emptyComparison,
-  comparisonExample,
   comparisonBrief,
   comparisonProgress,
 } from "@/lib/folio/comparison";
@@ -153,14 +161,16 @@ export default function Workspace({
   const exportLock = useRef(false);
   const [saving, setSaving] = useState("saved");
   const [view, setView] = useState("editor");
-  const [rightOpen, setRightOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(false);
+  const [questionId, setQuestionId] = useState("");
+  const [newQuestion, setNewQuestion] = useState("");
   const [focus, setFocus] = useState(false);
   const [dialog, setDialog] = useState<string | null>(null);
   const dialogRef = useRef<string | null>(null);
   if (dialog) dialogRef.current = dialog;
   const dialogKind = dialog || dialogRef.current;
   const [newName, setNewName] = useState("");
-  const [newTemplate, setNewTemplate] = useState("comparison");
+  const [newTemplate, setNewTemplate] = useState("research");
   const [query, setQuery] = useState("");
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
   const [selectedQuote, setSelectedQuote] = useState("");
@@ -170,6 +180,7 @@ export default function Workspace({
     null,
   );
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const evidenceReturn = useRef<HTMLElement | null>(null);
   const [panelTab, setPanelTab] = useState("sources");
   const [undoInsertion, setUndoInsertion] = useState<{
     projectId: string;
@@ -184,6 +195,10 @@ export default function Workspace({
   languageRef.current = data.language;
   const project =
     data.projects.find((p) => p.id === data.activeId) || data.projects[0];
+  const notebook = notebookFor(project);
+  const activeQuestion =
+    notebook.questions.find((q) => q.id === questionId) ||
+    notebook.questions[0];
   const t = useCallback(
     (zh: string, en: string) => (data.language === "zh" ? zh : en),
     [data.language],
@@ -235,13 +250,6 @@ export default function Workspace({
   useEffect(() => {
     if (loaded) autosave.current?.schedule(data);
   }, [data, loaded]);
-  useEffect(() => {
-    const media = window.matchMedia("(min-width: 1100px)");
-    const change = () => setRightOpen(media.matches);
-    change();
-    media.addEventListener("change", change);
-    return () => media.removeEventListener("change", change);
-  }, []);
   useEffect(() => {
     document.documentElement.lang = data.language === "zh" ? "zh-CN" : "en";
     document.title =
@@ -302,6 +310,7 @@ export default function Workspace({
     }));
   };
   const inspectEvidence = (e: Evidence) => {
+    evidenceReturn.current = document.activeElement as HTMLElement;
     saveReading({
       sourceId: e.sourceId,
       versionId: e.versionId,
@@ -375,7 +384,13 @@ export default function Workspace({
             : s,
         ),
       });
-      setView(project.comparison ? "comparison" : "review");
+      setView(
+        project.notebook
+          ? "findings"
+          : project.comparison
+            ? "comparison"
+            : "review",
+      );
       setSelectedSource(null);
       setReplacing(null);
       toast.success(
@@ -568,6 +583,9 @@ export default function Workspace({
     if (newTemplate === "comparison") {
       next.comparison = emptyComparison(data.language);
       next.lastView = "comparison";
+    } else {
+      next.notebook = emptyNotebook();
+      next.lastView = "findings";
     }
     setData((current) => ({
       ...current,
@@ -580,7 +598,7 @@ export default function Workspace({
     setView(next.lastView || "editor");
   };
   const addComparisonExample = () => {
-    const next = comparisonExample(data.language);
+    const next = notebookExample(data.language);
     setData((current) => ({
       ...current,
       projects: [...current.projects, next],
@@ -588,7 +606,8 @@ export default function Workspace({
     }));
     setSelectedSource(null);
     setDialog(null);
-    setView("comparison");
+    setView("findings");
+    setQuestionId("");
   };
   const buildComparisonBrief = () => {
     try {
@@ -616,6 +635,110 @@ export default function Workspace({
     } catch (error) {
       toast.error(errorMessage(error, data.language));
     }
+  };
+  const startResearch = (objective: string) => {
+    const question = { id: uid(), title: objective };
+    updateProject({
+      name: project.name === "Untitled research" ? objective : project.name,
+      reportTitle:
+        project.reportTitle === "Untitled research"
+          ? objective
+          : project.reportTitle,
+      notebook: { objective, questions: [question], findings: [] },
+    });
+    setQuestionId(question.id);
+  };
+  const addFindingToBrief = (finding: Finding) => {
+    try {
+      const nodes = findingNodes(finding, project, data.language);
+      const before = structuredClone(project.content);
+      const after = {
+        ...before,
+        content: [...(before.content || []), ...nodes],
+      };
+      updateProject({
+        content: after,
+        snapshots: [
+          snapshot(t("加入发现之前", "Before adding a finding")),
+          ...project.snapshots,
+        ],
+      });
+      setUndoInsertion({ projectId: project.id, before, after });
+      toast.success(
+        t(
+          "已加入简报，包含引用、备注和核对状态。",
+          "Added to brief with citations, note and review status.",
+        ),
+        {
+          action: {
+            label: t("查看简报", "View brief"),
+            onClick: () => setView("editor"),
+          },
+        },
+      );
+    } catch (error) {
+      toast.error(errorMessage(error, data.language));
+    }
+  };
+  const keepDraft = (draft: Draft): boolean => {
+    if (!activeQuestion) {
+      toast.info(
+        t("请先创建一个研究问题。", "Create a research question first."),
+      );
+      setView("findings");
+      return false;
+    }
+    if (
+      notebook.findings.length + draft.paragraphs.length >
+      notebookLimits.findings
+    ) {
+      toast.error(
+        t(
+          "每个项目最多保留 200 条发现。",
+          "Keep up to 200 findings per project.",
+        ),
+      );
+      return false;
+    }
+    try {
+      draftNodes(draft, project);
+      updateProject({
+        notebook: {
+          ...notebook,
+          findings: [
+            ...notebook.findings,
+            ...findingsFromDraft(draft, activeQuestion.id),
+          ],
+        },
+      });
+      toast.success(
+        t(
+          "已保留为发现，等待你的核对。",
+          "Saved as findings, ready for your review.",
+        ),
+        {
+          action: {
+            label: t("查看发现", "View findings"),
+            onClick: () => setView("findings"),
+          },
+        },
+      );
+      return true;
+    } catch (error) {
+      toast.error(errorMessage(error, data.language));
+      return false;
+    }
+  };
+  const askQuestion = (question: string) => {
+    updateProject({
+      research: {
+        question,
+        selectedSourceIds: project.sources.map((s) => s.id),
+        mode: project.research?.mode || "passages",
+        turns: project.research?.turns || [],
+      },
+    });
+    setView("research");
   };
   const downloadMarkdown = () => {
     exportMarkdown(project, data.language);
@@ -669,151 +792,139 @@ export default function Workspace({
     );
   return (
     <SidebarProvider
-      style={{ "--sidebar-width": "228px" } as React.CSSProperties}
+      style={{ "--sidebar-width": "218px" } as React.CSSProperties}
       className={`folio-app ${focus ? "is-focused" : ""}`}
     >
       <Sidebar className="folio-sidebar" collapsible="offcanvas">
         <SidebarHeader className="brand-area">
+          <button className="all-research" onClick={() => setDialog("search")}>
+            <ArrowLeft size={16} />
+            {t("所有研究", "All research")}
+          </button>
           <button
-            className="brand"
-            onClick={() => {
-              setView("editor");
-              setFocus(false);
-            }}
+            className="sidebar-project-name"
+            onClick={() => setDialog("document")}
           >
-            <span className="brand-mark">
-              <svg
-                viewBox="0 0 32 32"
-                width="28"
-                height="28"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M7 6.5h8.5c4.9 0 8 2.1 8 6.2v12.8H15c-4.9 0-8-2.1-8-6.2V6.5Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M12 11h8M12 15h8M12 19h5"
-                  stroke="var(--logo-paper, #faf9f5)"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-            <span>
-              Folio<span className="brand-period">.</span>
-            </span>
+            {project.name}
           </button>
-          <button className="workspace-switch" onClick={() => setDialog("new")}>
-            <span className="workspace-avatar">
-              <span />
-            </span>
-            {t("个人空间", "Personal space")}
-            <ChevronDown size={14} />
-          </button>
+          <span className="sidebar-project-status">
+            {project.example
+              ? t("虚构示例", "Fictional sample")
+              : t("研究中", "In progress")}
+          </span>
         </SidebarHeader>
         <NavigationContent>
-          <button className="search-button" onClick={() => setDialog("search")}>
-            <Search size={16} />
-            <span>{t("搜索资料与想法", "Find anything")}</span>
-            <kbd>⌘ K</kbd>
-          </button>
-          <nav className="main-nav" aria-label={t("主导航", "Main navigation")}>
-            <button
-              className={view === "comparison" ? "active" : ""}
-              onClick={() => {
-                setView("comparison");
-                setSelectedSource(null);
-              }}
+          <div className="question-navigation">
+            <div className="sidebar-label">{t("研究问题", "Questions")}</div>
+            <nav
+              className="main-nav question-nav"
+              aria-label={t("研究问题", "Research questions")}
             >
-              <Columns3 size={18} />
-              {t("比较与决策", "Compare & decide")}
-              {comparisonProgress(project).changed > 0 && (
-                <span className="changes-count">
-                  {comparisonProgress(project).changed}
-                </span>
-              )}
-            </button>
-            <button
-              className={view === "research" ? "active" : ""}
-              onClick={() => {
-                setView("research");
-                setSelectedSource(null);
-              }}
-            >
-              <MessageSquare size={18} />
-              {t("资料问答", "Ask your sources")}
-              <span className="nav-dot" />
-            </button>
-            <button
-              className={view === "editor" ? "active" : ""}
-              onClick={() => setView("editor")}
-            >
-              <FileText size={18} />
-              {t("写作工作台", "Writing desk")}
-              <span className="nav-dot" />
-            </button>
-            <button
-              className={view === "library" ? "active" : ""}
-              onClick={() => setView("library")}
-            >
-              <FolderOpen size={18} />
-              {t("资料库", "Sources")}
-              <span className="nav-count">{project.sources.length}</span>
-            </button>
-            <button
-              className={view === "history" ? "active" : ""}
-              onClick={() => setView("history")}
-            >
-              <Clock3 size={18} />
-              {t("版本记录", "Version history")}
-            </button>
-            <button
-              className={view === "review" ? "active" : ""}
-              onClick={() => setView("review")}
-            >
-              <ShieldCheck size={18} />
-              {t("来源检查", "Source review")}
-              {countChanges(project) > 0 && (
-                <span className="changes-count">{countChanges(project)}</span>
-              )}
-            </button>
-          </nav>
-          <div className="sidebar-label">
-            <span>{t("我的项目", "PROJECTS")}</span>
-            <button
-              aria-label={t("新建项目", "New project")}
-              onClick={() => setDialog("new")}
-            >
-              <Plus size={15} />
-            </button>
-          </div>
-          <div className="project-list">
-            {data.projects.map((p) => (
+              {notebook.questions.map((q, i) => (
+                <button
+                  key={q.id}
+                  className={
+                    q.id === activeQuestion?.id && view === "findings"
+                      ? "active"
+                      : ""
+                  }
+                  onClick={() => {
+                    setQuestionId(q.id);
+                    setView("findings");
+                  }}
+                >
+                  <span className="question-number">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span>{q.title}</span>
+                </button>
+              ))}
               <button
-                key={p.id}
-                className={p.id === project.id ? "selected" : ""}
+                disabled={notebook.questions.length >= notebookLimits.questions}
                 onClick={() => {
-                  setData((d) => ({ ...d, activeId: p.id }));
-                  setSelectedSource(
-                    p.sources.find((s) => s.id === p.reading?.sourceId) || null,
-                  );
-                  setSelectedVersionId(p.reading?.versionId || "");
-                  setSelectedQuote(p.reading?.quote || "");
-                  setView(p.lastView || "editor");
+                  setNewQuestion("");
+                  setDialog("question");
                 }}
               >
-                <span className="project-dot">
-                  <BookOpen size={13} />
-                </span>
-                <span>{p.name}</span>
-                {p.id === project.id && (
-                  <span className="project-selected-dot" />
+                <Plus size={16} />
+                {t("添加问题", "Add question")}
+              </button>
+            </nav>
+          </div>
+          <div className="sidebar-source-group">
+            <button onClick={() => setView("library")}>
+              <FolderOpen size={16} />
+              {project.sources.length}{" "}
+              {t(
+                "份资料",
+                project.sources.length === 1 ? "source file" : "source files",
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setUpdateSourceId(null);
+                setDialog("import");
+              }}
+            >
+              <Plus size={16} />
+              {t("添加资料", "Add source")}
+            </button>
+          </div>
+          <details className="workspace-tools">
+            <summary>
+              {t("更多工具", "More tools")}
+              <ChevronDown size={13} />
+            </summary>
+            <nav className="main-nav" aria-label={t("更多工具", "More tools")}>
+              <button onClick={() => setView("comparison")}>
+                <Columns3 size={16} />
+                {t("方案比较", "Compare options")}
+              </button>
+              <button onClick={() => setView("history")}>
+                <Clock3 size={16} />
+                {t("版本记录", "Version history")}
+              </button>
+              <button onClick={() => setView("review")}>
+                <ShieldCheck size={16} />
+                {t("简报来源检查", "Brief source review")}
+                {countChanges(project) > 0 && (
+                  <span className="changes-count">{countChanges(project)}</span>
                 )}
               </button>
-            ))}
-          </div>
+            </nav>
+          </details>
+          <details className="workspace-tools project-switcher">
+            <summary>
+              {t("切换项目", "Switch project")}
+              <ChevronDown size={13} />
+            </summary>
+            <div className="project-list">
+              {data.projects.map((p) => (
+                <button
+                  key={p.id}
+                  className={p.id === project.id ? "selected" : ""}
+                  onClick={() => {
+                    setData((d) => ({ ...d, activeId: p.id }));
+                    setSelectedSource(
+                      p.sources.find((s) => s.id === p.reading?.sourceId) ||
+                        null,
+                    );
+                    setSelectedVersionId(p.reading?.versionId || "");
+                    setSelectedQuote(p.reading?.quote || "");
+                    setView(p.lastView || "editor");
+                  }}
+                >
+                  <span className="project-dot">
+                    <BookOpen size={13} />
+                  </span>
+                  <span>{p.name}</span>
+                  {p.id === project.id && (
+                    <span className="project-selected-dot" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </details>
           {view === "editor" && (
             <div className="document-outline">
               <div className="sidebar-label">
@@ -853,29 +964,16 @@ export default function Workspace({
           </button>
         </NavigationContent>
         <SidebarFooter className="sidebar-bottom">
-          <div
-            className="language-switch"
-            role="group"
-            aria-label={t("界面语言", "Interface language")}
-          >
-            <Languages size={14} aria-hidden="true" />
-            <button
-              aria-pressed={data.language === "en"}
-              onClick={() => changeLanguage("en")}
-            >
-              English
-            </button>
-            <button
-              aria-pressed={data.language === "zh"}
-              onClick={() => changeLanguage("zh")}
-            >
-              中文
-            </button>
-          </div>
           <div className="local-note">
             <ShieldCheck size={16} />
             <div>
-              <strong>{t("留在你的设备上", "On your device")}</strong>
+              <strong role="status">
+                {saving === "saved"
+                  ? t("已保存到本机", "Saved locally")
+                  : saving === "saving"
+                    ? t("正在保存…", "Saving…")
+                    : t("保存失败，请备份", "Save failed. Export a backup.")}
+              </strong>
               <span>
                 {t(
                   "资料始终留在你的浏览器",
@@ -897,73 +995,168 @@ export default function Workspace({
           </button>
         </SidebarFooter>
       </Sidebar>
-      <main className="workspace-main">
-        <header className="topbar">
-          <div className="breadcrumbs">
-            <SidebarTrigger className="sidebar-toggle" />
-            <span>{t("项目", "Projects")}</span>
-            <ChevronRight size={13} />
-            <strong>{project.name}</strong>
-            {project.example && (
-              <span className="example-label">{t("示例", "Sample")}</span>
-            )}
+      <header className="topbar global-topbar">
+        <button
+          className="brand global-brand"
+          onClick={() => {
+            setView("findings");
+            setFocus(false);
+          }}
+          aria-label="Folio"
+        >
+          <svg
+            viewBox="0 0 28 28"
+            width="25"
+            height="25"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M5 21V6a2 2 0 0 1 2-2h15v7M12 25v-5h5l5-5h-5"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          </svg>
+          <span>folio</span>
+        </button>
+        <div className="breadcrumbs">
+          <SidebarTrigger className="sidebar-toggle" />
+          <span>{t("项目", "Projects")}</span>
+          <ChevronRight size={13} />
+          <strong>{project.name}</strong>
+          {project.example && (
+            <span className="example-label">{t("示例", "Sample")}</span>
+          )}
+        </div>
+        <div className="top-actions">
+          <button
+            className="header-search"
+            onClick={() => setDialog("search")}
+            aria-label={t("搜索", "Search")}
+          >
+            <Search size={17} />
+            <span>{t("搜索", "Search")}</span>
+            <kbd>Ctrl K</kbd>
+          </button>
+          <div
+            className="header-language"
+            aria-label={t("界面语言", "Interface language")}
+          >
+            <button
+              aria-pressed={data.language === "en"}
+              onClick={() => changeLanguage("en")}
+            >
+              EN
+            </button>
+            <span>/</span>
+            <button
+              aria-pressed={data.language === "zh"}
+              onClick={() => changeLanguage("zh")}
+            >
+              中文
+            </button>
           </div>
-          <div className="top-actions">
-            {undoInsertion?.projectId === project.id && (
-              <button className="undo-insertion" onClick={undoLastInsertion}>
-                <Undo2 size={14} />
-                {t("撤销写入", "Undo insertion")}
+          {undoInsertion?.projectId === project.id && (
+            <button className="undo-insertion" onClick={undoLastInsertion}>
+              <Undo2 size={14} />
+              {t("撤销写入", "Undo insertion")}
+            </button>
+          )}
+          <span className={`save-state ${saving}`}>
+            <Check size={14} />
+            {saving === "saved"
+              ? t("已保存到本机", "Saved locally")
+              : saving === "saving"
+                ? t("正在保存…", "Saving…")
+                : t("保存失败", "Save failed")}
+          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="export-button" disabled={exporting}>
+                {t("导出", "Export")}
+                <ArrowUpRight size={14} />
               </button>
-            )}
-            <span className={`save-state ${saving}`}>
-              <Check size={14} />
-              {saving === "saved"
-                ? t("已保存到本机", "Saved locally")
-                : saving === "saving"
-                  ? t("正在保存…", "Saving…")
-                  : t("保存失败", "Save failed")}
-            </span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="export-button" disabled={exporting}>
-                  {t("导出", "Export")}
-                  <ArrowUpRight size={14} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => runExport("word")}>
-                  Word (.docx)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={downloadMarkdown}>
-                  Markdown (.md)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => runExport("html")}>
-                  HTML (.html)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => runExport("backup")}>
-                  {t("项目备份", "Project backup")} (.json)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => window.print()}>
-                  {t("打印 / 存为 PDF", "Print / Save as PDF")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => runExport("word")}>
+                Word (.docx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={downloadMarkdown}>
+                Markdown (.md)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => runExport("html")}>
+                HTML (.html)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => runExport("backup")}>
+                {t("项目备份", "Project backup")} (.json)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.print()}>
+                {t("打印 / 存为 PDF", "Print / Save as PDF")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+      <main className="workspace-main">
+        <nav
+          className="workspace-tabs"
+          aria-label={t("研究工作区", "Research workspace")}
+        >
+          <div>
+            {[
+              ["findings", t("研究", "Research")],
+              ["library", t("资料", "Sources")],
+              ["editor", t("简报", "Brief")],
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                aria-current={view === id ? "page" : undefined}
+                className={view === id ? "selected" : ""}
+                onClick={() => setView(id)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-        </header>
-        {!focus && view !== "comparison" && (
-          <ProjectGuide
+          <div className="workspace-tab-actions">
+            <button className="focus-control" onClick={() => setFocus(!focus)}>
+              <Maximize2 size={15} />
+              {t("专注", "Focus")}
+            </button>
+            <button
+              className={`ask-folio ${view === "research" ? "selected" : ""}`}
+              onClick={() =>
+                activeQuestion
+                  ? askQuestion(activeQuestion.title)
+                  : setView("research")
+              }
+            >
+              <MessageSquare size={16} />
+              {t("问 Folio", "Ask Folio")}
+            </button>
+          </div>
+        </nav>
+        {view === "findings" ? (
+          <ResearchNotebook
+            key={project.id}
             project={project}
             language={data.language}
+            questionId={activeQuestion?.id || ""}
+            onChange={(notebook) => updateProject({ notebook })}
+            onStart={startResearch}
             onImport={() => {
               setUpdateSourceId(null);
               setDialog("import");
             }}
-            onView={setView}
-            onBackup={() => void runExport("backup")}
-            backingUp={exporting}
+            onExample={addComparisonExample}
+            onEvidence={inspectEvidence}
+            onAdd={addFindingToBrief}
+            onBrief={() => setView("editor")}
+            onAsk={askQuestion}
           />
-        )}
-        {view === "comparison" ? (
+        ) : view === "comparison" ? (
           <ComparisonView
             key={project.id}
             project={project}
@@ -1199,7 +1392,19 @@ export default function Workspace({
                               <button
                                 className="source-row"
                                 key={s.id}
-                                onClick={() => openSource(s)}
+                                onClick={() =>
+                                  inspectEvidence({
+                                    id: uid(),
+                                    sourceId: s.id,
+                                    versionId: s.versions.at(-1)!.id,
+                                    page: 1,
+                                    quote: "",
+                                    name: s.name,
+                                    label: String(
+                                      project.sources.indexOf(s) + 1,
+                                    ),
+                                  })
+                                }
                               >
                                 <div className={`source-file-icon ${s.color}`}>
                                   <FileText size={19} />
@@ -1339,6 +1544,7 @@ export default function Workspace({
               project={project}
               language={data.language}
               onAdopt={adoptDraft}
+              onKeep={keepDraft}
               onChange={updateResearch}
               onEvidence={inspectEvidence}
               onImport={() => setDialog("import")}
@@ -1492,17 +1698,19 @@ export default function Workspace({
         <DialogContent className="folio-dialog">
           <DialogHeader>
             <DialogTitle>
-              {dialogKind === "new"
-                ? t("开始一个新项目", "Start a new project")
-                : dialogKind === "search"
-                  ? t("找到你的思路", "Find your thoughts")
-                  : dialogKind === "settings"
-                    ? t("工作空间设置", "Workspace settings")
-                    : dialogKind === "document"
-                      ? t("文档信息", "Document details")
-                      : dialogKind === "snapshot"
-                        ? t("保存文档版本", "Save document version")
-                        : t("添加到工作空间", "Add to your workspace")}
+              {dialogKind === "question"
+                ? t("添加研究问题", "Add a research question")
+                : dialogKind === "new"
+                  ? t("开始一个新项目", "Start a new project")
+                  : dialogKind === "search"
+                    ? t("找到你的思路", "Find your thoughts")
+                    : dialogKind === "settings"
+                      ? t("工作空间设置", "Workspace settings")
+                      : dialogKind === "document"
+                        ? t("文档信息", "Document details")
+                        : dialogKind === "snapshot"
+                          ? t("保存文档版本", "Save document version")
+                          : t("添加到工作空间", "Add to your workspace")}
             </DialogTitle>
             <DialogDescription>
               {t(
@@ -1526,7 +1734,13 @@ export default function Workspace({
                   activeId: p.id,
                 }));
                 setSelectedSource(null);
-                setView(p.comparison ? "comparison" : "editor");
+                setView(
+                  p.notebook
+                    ? "findings"
+                    : p.comparison
+                      ? "comparison"
+                      : "editor",
+                );
                 toast.success(t("项目已恢复", "Project restored"));
               }}
               onSnapshot={saveSnapshot}
@@ -1541,6 +1755,47 @@ export default function Workspace({
                 setUpdateSourceId(null);
               }}
             />
+          ) : dialogKind === "question" ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (
+                  !newQuestion.trim() ||
+                  notebook.questions.length >= notebookLimits.questions
+                )
+                  return;
+                const q = { id: uid(), title: newQuestion.trim() };
+                updateProject({
+                  notebook: {
+                    ...notebook,
+                    objective: notebook.objective || q.title,
+                    questions: [...notebook.questions, q],
+                  },
+                });
+                setQuestionId(q.id);
+                setDialog(null);
+                setView("findings");
+              }}
+            >
+              <label className="field-label" htmlFor="new-question">
+                {t("你想回答什么？", "What would you like to answer?")}
+              </label>
+              <input
+                id="new-question"
+                autoFocus
+                className="field-input"
+                value={newQuestion}
+                maxLength={200}
+                onChange={(e) => setNewQuestion(e.target.value)}
+              />
+              <button
+                className="primary-button dialog-submit"
+                disabled={!newQuestion.trim()}
+              >
+                {t("添加问题", "Add question")}
+                <Plus size={15} />
+              </button>
+            </form>
           ) : dialogKind === "new" ? (
             <form
               onSubmit={(e) => {
@@ -1571,8 +1826,8 @@ export default function Workspace({
                   <option value="comparison">
                     {t("方案比较与研究简报", "Comparison & decision brief")}
                   </option>
-                  <option value="writing">
-                    {t("自由研究与写作", "Open research & writing")}
+                  <option value="research">
+                    {t("研究笔记与简报", "Research notebook & brief")}
                   </option>
                 </select>
               </label>
@@ -1582,8 +1837,8 @@ export default function Workspace({
                 onClick={addComparisonExample}
               >
                 {t(
-                  "先体验一个完整的比较示例",
-                  "Explore a complete comparison sample",
+                  "先体验一个完整的研究示例",
+                  "Explore a complete research sample",
                 )}
               </button>
               <button
@@ -1729,7 +1984,13 @@ export default function Workspace({
         </DialogContent>
       </Dialog>
       <Dialog open={evidenceOpen} onOpenChange={setEvidenceOpen}>
-        <DialogContent className="evidence-dialog">
+        <DialogContent
+          className="evidence-dialog"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            evidenceReturn.current?.focus({ preventScroll: true });
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{t("核对证据", "Verify the evidence")}</DialogTitle>
             <DialogDescription>
@@ -1756,6 +2017,7 @@ export default function Workspace({
                   initialPage={project.reading.page}
                   language={data.language}
                   expanded
+                  backLabel={t("返回工作区", "Back to workspace")}
                   onPosition={saveReading}
                   onBack={() => setEvidenceOpen(false)}
                   onUpdate={() => {

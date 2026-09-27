@@ -6,9 +6,19 @@ A local-first research workspace for comparing options and writing evidence-back
 
 [简体中文](README.zh-CN.md) · [Verification](QA.md) · [MIT license](LICENSE)
 
-Folio opens in English. Switch between **English / 中文** in the sidebar including the mobile sidebar; your preference is remembered. Changing the interface language never translates or overwrites your writing.
+Folio opens in English. Switch between **English / 中文** in the top bar on desktop and mobile; your preference is remembered. Changing the interface language never translates or overwrites your writing.
 
-> **0.6 working preview.** Comparison, evidence review and decision briefs work together. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+> **0.7 working preview.** Questions, findings, source evidence and briefs now share one research workflow. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+
+## New in 0.7
+
+- **A research notebook:** start with your own objective, add questions, and keep up to 200 findings across 30 questions. New installations start blank; the optional, clearly labeled fictional sample demonstrates the complete workflow.
+- **Evidence within reach:** one expanded finding at a time, exact source revision/page, your own note, and separate source counts and review states. Open the reader without leaving the question; closing it restores keyboard focus and keeps scroll position.
+- **From research to a brief:** selected passages can be kept as findings. Add an individual finding with its citations, note and review status to the editable brief. A pre-insertion snapshot and Undo insertion preserve the earlier draft. Inserting does not claim that a finding was verified.
+- **Review stays honest:** editing a note or claim clears its manual review. New source revisions flag affected findings. Missing evidence can remain a draft; an invalid citation cannot be inserted. Backups validate and preserve the entire notebook.
+- **A lighter interface:** pale lime accents, a white working surface, Research / Sources / Brief navigation, contextual tools, and a single sans-serif system with 24/16/14/12px type roles. Compare options, revision history and source review remain under More tools.
+
+Existing saved projects, content and source revisions are preserved. A legacy comparison can be read as findings; editing this notebook creates a separate snapshot rather than updating the comparison matrix. Briefs are also snapshots, so later note or evidence edits do not silently rewrite them. The optional model and PDF canvas still require explicit activation.
 
 ## New in 0.6
 
@@ -27,7 +37,7 @@ Batch candidates are temporary and are cleared when leaving the comparison or ch
 - Build an editable decision brief with a comparison table, versioned citations, recommendation and open questions. It appends to the document and saves a pre-insertion snapshot. The brief is a snapshot, not a live-synced document.
 - Backups retain the comparison and review marks. Markdown tables and reference appendices preserve all distinct quoted passages. Pending autosaves coalesce instead of accumulating stale writes.
 - Downloads offer a **Save file** link and, where supported, **Save as…**. JSON backups up to 2 MiB also support **Copy backup text**; paste it into Preferences & backups → Restore from backup text. Copying is not a durable backup until you save the text elsewhere.
-- New installations open a fictional support-software comparison. Existing projects and default views are preserved. Use **New project → Explore a complete comparison sample** to add the sample without changing your work.
+- In 0.5–0.6, new installations opened the comparison sample. Version 0.7 starts with an empty notebook. Use **New project → Explore a complete research sample** for the optional demo.
 
 The comparison workflow is human-led: it does not automatically extract all cells, verify semantic truth, rank options or conduct web research. The browser download manager remains unverified in the embedded host; the original freeze incident is still open. See [QA](QA.md).
 
@@ -72,7 +82,7 @@ npm start
 - **Take your work with you.** Export Word, Markdown, HTML, or print. JSON project backups include original files, source history, and snapshots.
 - **Try local AI.** Optionally run Qwen3 through WebLLM in a Web Worker on a compatible WebGPU device. Review and select a generated answer before appending it. If the model identifies conflicting sources, their positions keep separate citations.
 
-The interface combines a quiet three-pane workspace, responsive navigation, self-hosted Geist and Newsreader fonts, and Noto Sans SC for Chinese. It supports reduced motion and keyboard navigation. Production builds include an offline app shell and a PWA manifest. Browsers supporting WebMCP can list and open projects without exposing document contents through that interface.
+The interface uses one primary working surface, contextual evidence, responsive navigation, self-hosted Geist, and Noto Sans SC for Chinese. It supports reduced motion and keyboard navigation. Production builds include an offline app shell and a PWA manifest. Browsers supporting WebMCP can list and open projects without exposing document contents through that interface.
 
 ## Try the evidence workflow
 

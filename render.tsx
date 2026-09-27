@@ -2,13 +2,12 @@ import React, { Component } from "react";
 import { createRoot } from "react-dom/client";
 import Home from "./app/page";
 import "@fontsource-variable/geist";
-import "@fontsource-variable/newsreader/standard.css";
-import "@fontsource-variable/newsreader/standard-italic.css";
 import "@fontsource-variable/noto-sans-sc";
 import "./app/globals.css";
 import "./app/atelier.css";
 import "./app/research.css";
 import "./app/comparison.css";
+import "./app/notebook.css";
 
 class WorkspaceBoundary extends Component<
   { children: React.ReactNode; onFailure: () => void },

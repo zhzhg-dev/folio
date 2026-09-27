@@ -42,6 +42,7 @@ function AnswerCard({
   language,
   onEvidence,
   onAdopt,
+  onKeep,
   onReview,
 }: {
   turn: ResearchTurn;
@@ -49,6 +50,7 @@ function AnswerCard({
   language: Language;
   onEvidence: (e: Evidence) => void;
   onAdopt: (draft: Draft) => boolean;
+  onKeep?: (draft: Draft) => boolean;
   onReview: (ids: string[]) => void;
 }) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
@@ -95,11 +97,15 @@ function AnswerCard({
       </div>
       {turn.status === "insufficient" ? (
         <div className="answer-insufficient">
-          <strong>{t("没有找到足够依据", "Not enough evidence")}</strong>
+          <strong>
+            {turn.mode === "passages"
+              ? t("暂未找到匹配原文", "No matching passages yet")
+              : t("没有找到足够依据", "Not enough evidence")}
+          </strong>
           <p>
             {t(
-              "当前选中的资料没有提供足够信息。试着换一个具体问题，或添加更多资料。",
-              "The selected sources did not provide enough information. Try a more specific question or add another source.",
+              "试试资料中的一两个关键词，或调整资料范围。没有匹配到原文，并不代表资料中一定没有答案。",
+              "Try one or two keywords from your sources, or change the source selection. A missed match does not establish that the answer is absent.",
             )}
           </p>
         </div>
@@ -174,6 +180,26 @@ function AnswerCard({
             ))}
           </div>
           <div className="answer-actions">
+            {onKeep && (
+              <button
+                className="primary-button"
+                disabled={!selection.length || !valid}
+                onClick={() => {
+                  if (
+                    onKeep({
+                      paragraphs: turn.paragraphs.filter((_, i) =>
+                        selection.includes(i),
+                      ),
+                      evidence: turn.evidence,
+                    })
+                  )
+                    setSelection([]);
+                }}
+              >
+                <Plus size={15} />
+                {t("保留为发现", "Keep as findings")}
+              </button>
+            )}
             <button
               className="text-action"
               onClick={() =>
@@ -235,6 +261,7 @@ export default function Assistant({
   project,
   language,
   onAdopt,
+  onKeep,
   onChange,
   onEvidence,
   onImport,
@@ -242,6 +269,7 @@ export default function Assistant({
   project: Project;
   language: Language;
   onAdopt: (draft: Draft) => boolean;
+  onKeep?: (draft: Draft) => boolean;
   onChange: (state: ResearchState) => void;
   onEvidence: (e: Evidence) => void;
   onImport: () => void;
@@ -566,6 +594,7 @@ export default function Assistant({
             language={language}
             onEvidence={onEvidence}
             onAdopt={onAdopt}
+            onKeep={onKeep}
             onReview={(ids) =>
               patch({
                 turns: state.current.turns.map((current) =>

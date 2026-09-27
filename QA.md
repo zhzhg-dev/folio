@@ -1,5 +1,15 @@
 # Folio verification
 
+## 0.7 research notebook and light interface — 2026-09-27
+
+- Type checking and 85 automated tests pass. Seven notebook tests cover blank English first use, traceable bilingual samples, non-mutating legacy comparison access, review reset/staleness, exact brief citations and notes, selected-passage adoption, backup round trips and malformed notebook rejection.
+- Local browser at 1440px: created a separate test project, set an objective, imported fictional text, searched it, kept a selected passage as a finding, edited it, added a note and appended it to the brief. The brief contained the exact citation, note and Not reviewed status. Undo insertion restored the empty draft. Existing projects remained accessible.
+- Marking a finding reviewed and then editing its note reset the checkbox. Opening the exact source and closing its dialog restored focus to the source button and retained the research scroll position (246px in the narrow-screen check).
+- At 390px, the Chinese research page and source reader each had a 390px document width with no horizontal overflow. The mobile sidebar, language switch, finding editor and focus mode were exercised. Desktop focus mode reclaimed the sidebar space (1416px main surface in a 1440px viewport). Refresh retained the question, finding, note, source and Chinese preference. Returned to English afterward.
+- A natural-language query missed a relevant passage, while the specific keywords CSV export returned it. The empty-state wording now distinguishes a retrieval miss from proof that a source lacks the answer. The lexical engine is unchanged; semantic question understanding remains a quality gate.
+- No application warnings or errors appeared in the inspected console. No model was downloaded and no new automatic PDF rendering was introduced. These controlled checks do not establish the cause or resolution of the original host freeze, download interoperability, AI answer quality or long-session performance.
+- Notebook edits made from a legacy comparison create a separate snapshot. The matrix and notebook do not continuously synchronize. Brief insertion similarly preserves a dated working snapshot and existing document history.
+
 ## 0.6 batch candidates and continuous review — 2026-09-26
 
 - Type checking, 78 automated tests, the 40-case retrieval development evaluation and production build pass. Ten new fictional tasks cover source creation, scoped evidence, manual review, briefs, Markdown and backup/restoration. These are development acceptance checks, not held-out evaluation or AI accuracy claims.

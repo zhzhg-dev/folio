@@ -28,16 +28,16 @@
   letter-spacing: 0.12em;
 }
 .research-header h1 {
-  font-family: "Newsreader Variable", serif;
-  font-size: 42px;
+  font-family: var(--font-sans);
+  font-size: 24px;
   line-height: 1.12;
-  font-weight: 450;
+  font-weight: 500;
   letter-spacing: -1.3px;
   margin: 9px 0 0;
 }
 html[lang="zh-CN"] .research-header h1 {
   font-family: var(--font-sans);
-  font-size: 30px;
+  font-size: 24px;
   letter-spacing: -0.8px;
 }
 .research-local {
@@ -113,7 +113,7 @@ html[lang="zh-CN"] .research-header h1 {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 13px;
+  font-size: 14px;
   color: #506143;
 }
 .research-modes {
@@ -149,10 +149,10 @@ html[lang="zh-CN"] .research-header h1 {
 }
 .research-model strong {
   font-size: 14px;
-  font-weight: 550;
+  font-weight: 600;
 }
 .research-model p {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.7;
   color: #68715f;
   margin: 5px 0 0;
@@ -167,7 +167,7 @@ html[lang="zh-CN"] .research-header h1 {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .research-model [data-slot="progress"] {
   width: 100%;
@@ -197,19 +197,19 @@ html[lang="zh-CN"] .research-header h1 {
   border-radius: 18px;
 }
 .research-empty h2 {
-  font-family: "Newsreader Variable", serif;
-  font-weight: 450;
-  font-size: 32px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 24px;
   line-height: 1.2;
   letter-spacing: -0.6px;
   margin: 22px 0 13px;
 }
 html[lang="zh-CN"] .research-empty h2 {
   font-family: var(--font-sans);
-  font-size: 25px;
+  font-size: 24px;
 }
 .research-empty p {
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.85;
   color: #6a7164;
   margin: 0 auto 22px;
@@ -260,8 +260,8 @@ html[lang="zh-CN"] .research-empty h2 {
 }
 .question-row h2 {
   margin: 2px 0 0;
-  font-size: 20px;
-  font-weight: 550;
+  font-size: 16px;
+  font-weight: 600;
   line-height: 1.55;
   letter-spacing: -0.35px;
   overflow-wrap: anywhere;
@@ -378,7 +378,7 @@ html[lang="zh-CN"] .research-empty h2 {
 }
 .answer-insufficient strong {
   font-size: 16px;
-  font-weight: 550;
+  font-weight: 600;
 }
 .answer-insufficient p {
   font-size: 14px;
@@ -488,7 +488,7 @@ html[lang="zh-CN"] .research-empty h2 {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: #526b43;
   white-space: nowrap;
   padding: 6px 8px;
@@ -498,8 +498,8 @@ html[lang="zh-CN"] .research-empty h2 {
   color: #617255;
 }
 .research-invitation h3 {
-  font-family: "Newsreader Variable", var(--font-sans);
-  font-size: 25px;
+  font-family: var(--font-sans);
+  font-size: 24px;
   line-height: 1.25;
   margin: 18px 0 12px;
   color: #35442e;
@@ -591,7 +591,7 @@ html[lang="zh-CN"] .research-empty h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 13px;
+  font-size: 14px;
   color: #697460;
   margin: 14px 0 8px;
 }
@@ -678,7 +678,7 @@ html[lang="zh-CN"] .research-empty h2 {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 13px;
+  font-size: 14px;
   top: 12px;
   left: 12px;
   background: #ffffffed;
@@ -693,7 +693,7 @@ html[lang="zh-CN"] .research-empty h2 {
     padding: 26px 28px 18px;
   }
   .research-header h1 {
-    font-size: 36px;
+    font-size: 24px;
   }
   .research-local {
     display: none;
@@ -716,7 +716,7 @@ html[lang="zh-CN"] .research-empty h2 {
     margin: 34px auto;
   }
   .research-modes button {
-    font-size: 13px;
+    font-size: 14px;
   }
   .top-actions {
     gap: 5px;
@@ -730,10 +730,10 @@ html[lang="zh-CN"] .research-empty h2 {
     padding: 22px 20px 16px;
   }
   .research-header h1 {
-    font-size: 32px;
+    font-size: 24px;
   }
   html[lang="zh-CN"] .research-header h1 {
-    font-size: 25px;
+    font-size: 24px;
   }
   .research-controls {
     padding: 0 20px 12px;
@@ -761,7 +761,7 @@ html[lang="zh-CN"] .research-empty h2 {
     margin: 28px auto;
   }
   .research-empty h2 {
-    font-size: 28px;
+    font-size: 24px;
   }
   .research-empty > span {
     width: 45px;
@@ -769,7 +769,7 @@ html[lang="zh-CN"] .research-empty h2 {
     border-radius: 13px;
   }
   .question-row h2 {
-    font-size: 18px;
+    font-size: 16px;
   }
   .answer-card {
     padding: 25px 0 20px;
@@ -854,7 +854,7 @@ html[lang="zh-CN"] .research-empty h2 {
   flex-shrink: 0;
   border: 1px solid #d5dccd;
   border-radius: 50%;
-  font-size: 11px;
+  font-size: 12px;
 }
 .guide-number.is-done {
   background: #e4eadc;
@@ -865,8 +865,8 @@ html[lang="zh-CN"] .research-empty h2 {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 550;
+  font-size: 14px;
+  font-weight: 600;
   margin: 3px 0 6px;
   color: #35482b;
 }
@@ -907,7 +907,7 @@ html[lang="zh-CN"] .research-empty h2 {
 }
 .evidence-review > summary {
   padding: 13px 15px;
-  font-size: 13px;
+  font-size: 14px;
   color: #4b5f3f;
 }
 .evidence-review > summary > span:last-child {
@@ -942,9 +942,9 @@ html[lang="zh-CN"] .research-empty h2 {
 }
 .evidence-source-group h3 {
   color: #35482c;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
-  font-weight: 550;
+  font-weight: 600;
   overflow-wrap: anywhere;
   padding: 0 0 10px;
   margin: 0;
@@ -958,12 +958,12 @@ html[lang="zh-CN"] .research-empty h2 {
   flex-wrap: wrap;
   gap: 5px 12px;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 12px;
   color: #7b826f;
 }
 .ledger-passage blockquote {
-  font-family: "Newsreader Variable", var(--font-sans);
-  font-size: 17px;
+  font-family: var(--font-sans);
+  font-size: 16px;
   line-height: 1.65;
   margin: 10px 0 14px;
   color: #46503e;

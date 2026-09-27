@@ -1,5 +1,11 @@
 # Folio product priorities
 
+## 0.7 delivered: questions, findings and a calmer working surface
+
+The primary workflow is now an objective-led research notebook with contextual evidence, personal notes, manual review and individual finding-to-brief insertion. The interface uses a light lime palette and a compact four-role type system. The optional sample is separate from first use; existing projects and exact source histories remain intact. Legacy comparisons and notebook edits are separate snapshots, documented rather than silently synchronized.
+
+Next priorities remain unchanged: investigate the unresolved host freeze, validate full-size downloads, and test retrieval with realistic independently labeled bilingual sources. Keyword retrieval can miss natural-language questions; the empty state now distinguishes a missed match from absent evidence. Avoid expanding into accounts, billing or collaboration before these reliability and research-quality gates.
+
 ## 0.6 delivered: batch candidates and continuous review
 
 One coherent individual workflow now covers scoped batch candidate discovery, per-criterion search terms, focused review queues, explicit source-revision updates, manual confirmation and decision-brief delivery. Restore validation runs outside the page with cancellation. Ten fictional complete-task checks supplement the existing retrieval corpus; neither is an independent benchmark.

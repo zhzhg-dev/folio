@@ -1,6 +1,7 @@
 import { uid, type Project } from "./model.ts";
 import { validResearch } from "./research.ts";
 import { validComparison } from "./comparison.ts";
+import { validNotebook } from "./notebook.ts";
 import { hashBytes } from "./file-hash.ts";
 import { validateDocument } from "./integrity.ts";
 export async function restoreBackup(file: File): Promise<Project> {
@@ -19,6 +20,8 @@ export async function restoreBackup(file: File): Promise<Project> {
   )
     throw new Error("不是有效的 Folio 项目备份 / Invalid Folio backup");
   const p = data.project;
+  if (p.notebook !== undefined && !validNotebook(p.notebook))
+    throw new Error("研究笔记结构无效 / Invalid research notebook in backup");
   if (
     !validateDocument(p.content) ||
     p.snapshots.some(

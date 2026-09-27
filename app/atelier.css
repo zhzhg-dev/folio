@@ -55,7 +55,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 body {
-  font-size: 13px;
+  font-size: 14px;
 }
 button {
   transition:
@@ -105,7 +105,7 @@ textarea:focus-visible {
   gap: 5px;
   color: #2e3830;
   font-family: var(--font-editorial);
-  font-size: 35px;
+  font-size: 24px;
   font-weight: 500;
   letter-spacing: -1.4px;
 }
@@ -161,7 +161,7 @@ textarea:focus-visible {
   border-radius: 7px;
   color: #646e63;
   background: #fffefa;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 .search-button:hover {
   background: var(--surface);
@@ -172,7 +172,7 @@ textarea:focus-visible {
 }
 .search-button kbd {
   color: #646e63;
-  font-size: 11px;
+  font-size: 12px;
   border: 1px solid #e3e7da;
   border-radius: 3px;
   padding: 0 3px;
@@ -185,10 +185,10 @@ textarea:focus-visible {
   height: 37px;
   gap: 11px;
   padding: 0 12px;
-  font-size: 12.5px;
+  font-size: 14px;
   border-radius: 7px;
   color: #4b544d;
-  font-weight: 440;
+  font-weight: 400;
 }
 .main-nav button > svg {
   width: 16px;
@@ -202,7 +202,7 @@ textarea:focus-visible {
 .main-nav button.active {
   background: var(--surface);
   color: #2e3830;
-  font-weight: 550;
+  font-weight: 600;
   box-shadow:
     0 1px 3px #272e2610,
     0 0 0 1px #252d1e05;
@@ -214,7 +214,7 @@ textarea:focus-visible {
 }
 .nav-count {
   color: #646e63;
-  font-size: 11px;
+  font-size: 12px;
   padding: 1px 5px;
   border-radius: 4px;
   background: #efefe7;
@@ -223,8 +223,8 @@ textarea:focus-visible {
   padding: 0 12px;
   margin-bottom: 7px;
   color: #646e63;
-  font-size: 10px;
-  font-weight: 560;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0.1em;
 }
 .sidebar-label button {
@@ -239,14 +239,14 @@ textarea:focus-visible {
   height: 37px;
   padding: 0 12px;
   gap: 10px;
-  font-size: 11.5px;
+  font-size: 12px;
   border-radius: 6px;
   color: #646e63;
 }
 .project-list button.selected {
   background: #efefe7;
   color: #4b544d;
-  font-weight: 520;
+  font-weight: 500;
 }
 .project-list button:hover {
   background: #efefe7;
@@ -280,18 +280,18 @@ textarea:focus-visible {
   gap: 9px;
   color: #646e63;
   border-left-color: #e3e7da;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .document-outline button span {
   color: #70786c;
-  font-size: 10px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 .document-outline button.outline-title {
   border-left: 1.5px solid #859a70;
   color: #4b544d;
-  font-weight: 510;
+  font-weight: 500;
   padding-left: 11.5px;
 }
 .document-outline button:hover {
@@ -299,7 +299,7 @@ textarea:focus-visible {
   background: #efefe7;
 }
 .new-project {
-  font-size: 11.5px;
+  font-size: 12px;
   color: #646e63;
   margin-top: 15px;
   padding: 10px 12px;
@@ -329,7 +329,7 @@ textarea:focus-visible {
   padding: 5px 9px;
   flex: 1;
   text-align: center;
-  font-size: 11px;
+  font-size: 12px;
   color: #646e63;
   border-radius: 4px;
   line-height: 1.4;
@@ -338,7 +338,7 @@ textarea:focus-visible {
   background: #fffefa;
   color: #4b544d;
   box-shadow: 0 1px 3px #3640230b;
-  font-weight: 550;
+  font-weight: 600;
 }
 .local-note {
   gap: 8px;
@@ -351,12 +351,12 @@ textarea:focus-visible {
 }
 .local-note strong {
   color: #646e63;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 .local-note span {
   color: #70786c;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.5;
   margin-top: 4px;
 }
@@ -369,17 +369,17 @@ textarea:focus-visible {
   background: #efefe7;
   color: #646e63;
   font-family: var(--font-editorial);
-  font-size: 17px;
+  font-size: 16px;
   width: 30px;
   height: 30px;
   border: 1px solid #e3e7da;
 }
 .settings-link > span:nth-child(2) {
-  font-size: 11px;
+  font-size: 12px;
   color: #646e63;
 }
 .settings-link small {
-  font-size: 10px;
+  font-size: 12px;
   color: #70786c;
   margin-top: 2px;
 }
@@ -408,12 +408,12 @@ textarea:focus-visible {
 }
 .breadcrumbs {
   gap: 10px;
-  font-size: 11px;
+  font-size: 12px;
   color: #70786c;
 }
 .breadcrumbs strong {
   color: #4b544d;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 .breadcrumbs > svg {
@@ -431,7 +431,7 @@ textarea:focus-visible {
   background: #f7f7f1;
   border: 0;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 12px;
   padding: 3px 6px;
 }
 .top-actions {
@@ -440,7 +440,7 @@ textarea:focus-visible {
 .save-state {
   gap: 5px;
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
 }
 .save-state svg {
   width: 11px;
@@ -456,7 +456,7 @@ textarea:focus-visible {
   color: #fffefa;
   border-radius: 7px;
   padding: 8px 13px;
-  font-size: 11px;
+  font-size: 12px;
   gap: 13px;
   box-shadow: inset 0 1px 0 #ffffff10;
 }
@@ -497,7 +497,7 @@ textarea:focus-visible {
 }
 .format-tools .text-select {
   color: #646e63;
-  font-size: 11px;
+  font-size: 12px;
   width: 80px;
 }
 .view-tools {
@@ -508,7 +508,7 @@ textarea:focus-visible {
   gap: 6px;
   width: auto;
   padding: 0 9px;
-  font-size: 11px;
+  font-size: 12px;
   border: 1px solid #e3e7da;
 }
 .view-tools .panel-trigger svg {
@@ -532,9 +532,9 @@ textarea:focus-visible {
 }
 .document-type {
   color: #646e63;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.13em;
-  font-weight: 550;
+  font-weight: 600;
   gap: 8px;
 }
 .document-type > span {
@@ -547,7 +547,7 @@ textarea:focus-visible {
   padding: 1px 6px;
   border: 1px solid #e3e7da;
   color: #70786c;
-  font-size: 10px;
+  font-size: 12px;
   border-radius: 4px;
 }
 .document-eyebrow > button {
@@ -596,8 +596,8 @@ textarea:focus-visible {
 }
 .document-title-field {
   font-family: var(--font-editorial);
-  font-size: clamp(40px, 3.5vw, 55px);
-  font-weight: 430;
+  font-size: 24px;
+  font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 1.04;
   color: #2e3830;
@@ -610,7 +610,7 @@ textarea:focus-visible {
 .document-description-field {
   font-family: var(--font-sans);
   font-size: 12px;
-  font-weight: 380;
+  font-weight: 400;
   line-height: 1.8;
   letter-spacing: -0.008em;
   color: #646e63;
@@ -618,14 +618,14 @@ textarea:focus-visible {
 .document-meta {
   margin-top: 26px;
   gap: 8px;
-  font-size: 10px;
+  font-size: 12px;
   color: #70786c;
   line-height: 1.7;
 }
 .author-avatar {
   width: 21px;
   height: 21px;
-  font-size: 13px;
+  font-size: 14px;
   font-family: var(--font-editorial);
   background: #f7f7f1;
   color: #646e63;
@@ -636,9 +636,9 @@ textarea:focus-visible {
 }
 .folio-editor {
   font-family: var(--font-editorial);
-  font-size: 19px;
+  font-size: 16px;
   line-height: 1.65;
-  font-weight: 390;
+  font-weight: 400;
   color: #4b544d;
   letter-spacing: -0.012em;
   caret-color: #526f36;
@@ -646,9 +646,9 @@ textarea:focus-visible {
 .folio-editor h2 {
   font-family: var(--font-sans);
   color: #4b544d;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
-  font-weight: 550;
+  font-weight: 600;
   letter-spacing: -0.015em;
   margin: 32px 0 15px;
 }
@@ -657,7 +657,7 @@ textarea:focus-visible {
   color: #4b544d;
   font-size: 12px;
   line-height: 1.65;
-  font-weight: 550;
+  font-weight: 600;
   margin: 24px 0 12px;
 }
 .folio-editor p {
@@ -665,7 +665,7 @@ textarea:focus-visible {
 }
 .folio-editor strong {
   color: #4b544d;
-  font-weight: 580;
+  font-weight: 600;
 }
 .folio-editor blockquote {
   position: relative;
@@ -675,7 +675,7 @@ textarea:focus-visible {
   border-left: 1.5px solid #afc888;
   border-radius: 0;
   font-size: 24px;
-  font-weight: 360;
+  font-weight: 400;
   font-style: italic;
   letter-spacing: -0.02em;
   line-height: 1.5;
@@ -716,8 +716,8 @@ textarea:focus-visible {
   height: 15px;
   margin-left: 4px;
   padding: 0 4px;
-  font-size: 10px;
-  font-weight: 550;
+  font-size: 12px;
+  font-weight: 600;
   border-radius: 4px;
   color: #646e63;
   background: #f7f7f1;
@@ -734,7 +734,7 @@ textarea:focus-visible {
   font-style: italic;
   color: #70786c;
   letter-spacing: 0;
-  font-size: 13px;
+  font-size: 14px;
   margin-top: 38px;
 }
 .document-end > span {
@@ -767,8 +767,8 @@ textarea:focus-visible {
   flex: 1;
   justify-content: center;
   font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 440;
+  font-size: 12px;
+  font-weight: 400;
   color: #646e63;
   border-radius: 4px;
   padding: 0 7px;
@@ -784,7 +784,7 @@ textarea:focus-visible {
 .reference-tabs [data-slot="tabs-trigger"] > span {
   color: #646e63;
   background: #f7f7f1;
-  font-size: 10px;
+  font-size: 12px;
   padding: 1px 4px;
   border-radius: 3px;
 }
@@ -797,8 +797,8 @@ textarea:focus-visible {
 .panel-heading {
   margin-bottom: 18px;
   color: #70786c;
-  font-size: 10px;
-  font-weight: 550;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0.1em;
 }
 .panel-heading > button {
@@ -851,13 +851,13 @@ textarea:focus-visible {
 }
 .source-row strong {
   color: #646e63;
-  font-size: 11px;
-  font-weight: 510;
+  font-size: 12px;
+  font-weight: 500;
   max-width: 190px;
 }
 .source-row > div > span {
   color: #70786c;
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 4px;
   gap: 6px;
 }
@@ -872,7 +872,7 @@ textarea:focus-visible {
   justify-content: flex-start;
   border: 1px solid #e3e7da;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12px;
   color: #646e63;
   padding: 10px 12px;
   margin-top: 14px;
@@ -903,22 +903,22 @@ textarea:focus-visible {
   min-width: 15px;
   height: 15px;
   line-height: 13px;
-  font-size: 10px;
+  font-size: 12px;
   border-radius: 4px;
   margin-top: 2px;
 }
 .evidence-preview p {
   font-family: var(--font-editorial);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.5;
-  font-weight: 390;
+  font-weight: 400;
   color: #646e63;
   margin-bottom: 7px;
   -webkit-line-clamp: 3;
 }
 .evidence-preview > div > span {
   color: #70786c;
-  font-size: 10px;
+  font-size: 12px;
 }
 .evidence-preview:hover p {
   color: #646e63;
@@ -935,7 +935,7 @@ textarea:focus-visible {
 }
 .reference-tip p {
   color: #70786c;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.7;
 }
 .editor-status {
@@ -944,7 +944,7 @@ textarea:focus-visible {
   padding: 0 23px;
   height: 30px;
   color: #70786c;
-  font-size: 10px;
+  font-size: 12px;
 }
 .editor-status i {
   background: #efefe7;
@@ -961,7 +961,7 @@ textarea:focus-visible {
   color: #70786c;
   padding: 2px 5px;
   border-radius: 3px;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .primary-button {
@@ -981,7 +981,7 @@ textarea:focus-visible {
   color: #646e63;
   border-color: #e3e7da;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .secondary-button:hover {
   background: #f7f7f1;
@@ -997,14 +997,14 @@ textarea:focus-visible {
 }
 .folio-dialog [data-slot="dialog-title"] {
   font-family: var(--font-editorial);
-  font-size: 29px;
+  font-size: 24px;
   letter-spacing: -0.025em;
-  font-weight: 450;
+  font-weight: 500;
   color: #4b544d;
 }
 .folio-dialog [data-slot="dialog-description"] {
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
 }
 [data-slot="dialog-overlay"],
@@ -1022,13 +1022,13 @@ textarea:focus-visible {
 }
 [data-slot="dropdown-menu-item"],
 [data-slot="select-item"] {
-  font-size: 11px;
+  font-size: 12px;
   border-radius: 5px;
   padding: 8px 10px;
 }
 .field-label {
   color: #646e63;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   margin: 13px 0 8px;
 }
@@ -1056,11 +1056,11 @@ textarea:focus-visible {
   padding: 14px;
 }
 .setting-note p {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.8;
 }
 .small-copy {
-  font-size: 11px !important;
+  font-size: 12px !important;
   line-height: 1.8 !important;
   color: #70786c !important;
 }
@@ -1078,13 +1078,13 @@ textarea:focus-visible {
 .drop-zone strong {
   color: #646e63;
   font-family: var(--font-editorial);
-  font-size: 22px;
-  font-weight: 430;
+  font-size: 24px;
+  font-weight: 400;
 }
 .drop-zone span,
 .drop-zone small {
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
 }
 .search-results button {
   border-color: #e3e7da;
@@ -1098,7 +1098,7 @@ textarea:focus-visible {
 }
 .search-results small {
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
 }
 .collection-page {
   max-width: 1020px;
@@ -1109,13 +1109,13 @@ textarea:focus-visible {
 }
 .overline {
   color: #70786c;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.13em;
 }
 .collection-header h1 {
   font-family: var(--font-editorial);
-  font-size: 44px;
-  font-weight: 430;
+  font-size: 24px;
+  font-weight: 400;
   color: #4b544d;
   letter-spacing: -0.035em;
   margin: 13px 0;
@@ -1143,7 +1143,7 @@ textarea:focus-visible {
 }
 .library-row > span {
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
 }
 .library-row > svg {
   color: #70786c;
@@ -1159,11 +1159,11 @@ textarea:focus-visible {
 }
 .snapshot-row strong {
   color: #646e63;
-  font-size: 13px;
+  font-size: 14px;
 }
 .snapshot-row p,
 .snapshot-size {
-  font-size: 11px;
+  font-size: 12px;
   color: #70786c;
 }
 .review-item {
@@ -1177,18 +1177,18 @@ textarea:focus-visible {
   border-color: #e3e7da;
   background: #fffefa;
   color: #646e63;
-  font-size: 10px;
+  font-size: 12px;
 }
 .review-quote {
   font-family: var(--font-editorial);
-  font-size: 20px;
+  font-size: 16px;
   color: #70786c;
   background: #fffefa;
   border-color: #e3e7da;
   border-radius: 0 8px 8px 0;
 }
 .review-item-bottom > span {
-  font-size: 11px;
+  font-size: 12px;
   color: #70786c;
 }
 .empty-state {
@@ -1196,7 +1196,7 @@ textarea:focus-visible {
 }
 .empty-state h2 {
   font-family: var(--font-editorial);
-  font-size: 31px;
+  font-size: 24px;
   color: #70786c;
 }
 .empty-state p {
@@ -1205,13 +1205,13 @@ textarea:focus-visible {
 }
 .back-source {
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
   margin-bottom: 25px;
 }
 .reference-content h3 {
   font-family: var(--font-editorial);
-  font-size: 25px;
-  font-weight: 440;
+  font-size: 24px;
+  font-weight: 400;
   letter-spacing: -0.02em;
   color: #646e63;
   line-height: 1.3;
@@ -1219,35 +1219,35 @@ textarea:focus-visible {
 .source-meta,
 .source-version-row .source-meta {
   color: #70786c;
-  font-size: 10px;
+  font-size: 12px;
 }
 .source-version-row [data-slot="select-trigger"] {
   border-color: #e3e7da;
   background: #fffefa;
-  font-size: 10px;
+  font-size: 12px;
   color: #70786c;
   border-radius: 5px;
 }
 .original-file {
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
 }
 .source-page-heading {
   color: #70786c;
-  font-size: 10px;
+  font-size: 12px;
   border-color: #e3e7da;
 }
 .source-paragraph p {
   color: #646e63;
   font-family: var(--font-editorial);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.7;
 }
 .source-paragraph > button {
   color: #70786c;
   border-color: #e3e7da;
   background: #fffefa;
-  font-size: 10px;
+  font-size: 12px;
 }
 .assistant-panel {
   padding: 28px 20px;
@@ -1263,8 +1263,8 @@ textarea:focus-visible {
 }
 .assistant-panel h3 {
   font-family: var(--font-editorial);
-  font-size: 30px;
-  font-weight: 420;
+  font-size: 24px;
+  font-weight: 400;
   color: #646e63;
   letter-spacing: -0.025em;
   line-height: 1.2;
@@ -1272,15 +1272,15 @@ textarea:focus-visible {
 }
 .assistant-panel p {
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.8;
 }
 .assistant-panel .primary-button {
-  font-size: 11px;
+  font-size: 12px;
 }
 .model-label {
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
 }
 .model-label.ready {
   background: #f7f7f1;
@@ -1295,21 +1295,21 @@ textarea:focus-visible {
   gap: 5px;
 }
 .goal-chips button {
-  font-size: 10px;
+  font-size: 12px;
   color: #70786c;
   border-color: #e3e7da;
   border-radius: 5px;
 }
 .source-choices label {
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
 }
 .draft-preview {
   border-color: #e3e7da;
 }
 .draft-preview p {
   font-family: var(--font-editorial);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.65;
   color: #70786c;
 }
@@ -1319,7 +1319,7 @@ textarea:focus-visible {
 }
 .exit-focus {
   color: #70786c;
-  font-size: 11px;
+  font-size: 12px;
   top: 35px;
   left: 34px;
 }
@@ -1334,27 +1334,27 @@ textarea:focus-visible {
 /* Chinese uses a purpose-loaded CJK family, without faux serif fallbacks. */
 .paper[data-writing-language="zh"] .document-title-field {
   font-family: var(--font-sans);
-  font-size: 34px;
-  font-weight: 540;
+  font-size: 24px;
+  font-weight: 500;
   line-height: 1.45;
   letter-spacing: -0.055em;
 }
 .paper[data-writing-language="zh"] .folio-editor {
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.95;
-  font-weight: 370;
+  font-weight: 400;
   letter-spacing: 0.005em;
 }
 .paper[data-writing-language="zh"] .folio-editor h2 {
-  font-size: 17px;
+  font-size: 16px;
   letter-spacing: -0.02em;
 }
 .paper[data-writing-language="zh"] .folio-editor blockquote {
   font-family: var(--font-sans);
-  font-size: 17px;
+  font-size: 16px;
   font-style: normal;
-  font-weight: 360;
+  font-weight: 400;
   line-height: 1.85;
 }
 html[lang="zh-CN"]
@@ -1370,14 +1370,14 @@ html[lang="zh-CN"]
     .folio-dialog [data-slot="dialog-title"]
   ) {
   font-family: var(--font-sans);
-  font-size: 21px;
+  font-size: 16px;
   font-weight: 500;
   line-height: 1.6;
 }
 html[lang="zh-CN"] .collection-header h1 {
   font-family: var(--font-sans);
-  font-size: 31px;
-  font-weight: 520;
+  font-size: 24px;
+  font-weight: 500;
 }
 
 @media (min-width: 1600px) {
@@ -1389,10 +1389,10 @@ html[lang="zh-CN"] .collection-header h1 {
     padding-top: 47px;
   }
   .folio-editor {
-    font-size: 21px;
+    font-size: 16px;
   }
   .document-title-field {
-    font-size: 58px;
+    font-size: 24px;
   }
 }
 @media (max-width: 1279px) and (min-width: 1100px) {
@@ -1405,7 +1405,7 @@ html[lang="zh-CN"] .collection-header h1 {
     padding-left: 33px;
   }
   .document-title-field {
-    font-size: 42px;
+    font-size: 24px;
   }
   .reference-content {
     padding: 23px 15px;
@@ -1433,7 +1433,7 @@ html[lang="zh-CN"] .collection-header h1 {
     padding: 34px 40px 55px;
   }
   .document-title-field {
-    font-size: 47px;
+    font-size: 24px;
   }
   .breadcrumbs > span:first-of-type,
   .breadcrumbs > svg {
@@ -1470,11 +1470,11 @@ html[lang="zh-CN"] .collection-header h1 {
   }
   .breadcrumbs strong {
     max-width: 170px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .export-button {
     padding: 7px 11px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .export-button > svg:last-child {
     display: block;
@@ -1491,7 +1491,7 @@ html[lang="zh-CN"] .collection-header h1 {
   }
   .format-tools .text-select {
     width: 51px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .format-tools i {
     margin: 0 4px;
@@ -1507,32 +1507,32 @@ html[lang="zh-CN"] .collection-header h1 {
     padding: 29px 27px 45px;
   }
   .document-title-field {
-    font-size: 44px;
+    font-size: 24px;
     line-height: 1.04;
     margin-bottom: 19px;
   }
   .document-description-field {
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.85;
   }
   .document-meta {
     flex-wrap: wrap;
     gap: 6px;
     margin-top: 22px;
-    font-size: 10px;
+    font-size: 12px;
   }
   .paper-divider {
     margin-top: 21px;
     margin-bottom: 25px;
   }
   .folio-editor {
-    font-size: 19px;
+    font-size: 16px;
   }
   .folio-editor h2 {
-    font-size: 13px;
+    font-size: 14px;
   }
   .folio-editor blockquote {
-    font-size: 23px;
+    font-size: 24px;
     padding-left: 19px;
   }
   .document-eyebrow {
@@ -1546,7 +1546,7 @@ html[lang="zh-CN"] .collection-header h1 {
   }
   .editor-status {
     padding: 0 17px;
-    font-size: 10px;
+    font-size: 12px;
   }
   .editor-status > span {
     gap: 7px;
@@ -1555,7 +1555,7 @@ html[lang="zh-CN"] .collection-header h1 {
     padding: 31px 25px;
   }
   .collection-header h1 {
-    font-size: 38px;
+    font-size: 24px;
   }
   .folio-dialog {
     padding: 24px !important;
@@ -1581,7 +1581,7 @@ html[lang="zh-CN"] .collection-header h1 {
     left: 22px;
   }
   .paper[data-writing-language="zh"] .document-title-field {
-    font-size: 31px;
+    font-size: 24px;
   }
 }
 @media (max-height: 720px) and (min-width: 768px) {
