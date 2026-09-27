@@ -12,6 +12,7 @@ import { hashBytes } from "./file-hash.ts";
 export { hashBytes } from "./file-hash.ts";
 export { restoreBackup } from "./backup-restore.ts";
 import { prepareBackup, saveDownload } from "./backup-export.ts";
+import type { BackupOptions } from "./backup.ts";
 export function download(blob: Blob, name: string) {
   saveDownload(blob, name);
 }
@@ -338,6 +339,11 @@ export async function exportWord(project: Project, language: Language = "en") {
   });
   download(await Packer.toBlob(doc), `${project.reportTitle}.docx`);
 }
-export async function exportBackup(project: Project) {
-  download(await prepareBackup(project), `${project.name}.folio.json`);
+export async function exportBackup(
+  project: Project,
+  options: BackupOptions = {},
+) {
+  const blob = await prepareBackup(project, options);
+  options.signal?.throwIfAborted();
+  download(blob, `${project.name}.folio.json`);
 }

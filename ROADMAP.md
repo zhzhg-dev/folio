@@ -1,5 +1,12 @@
 # Folio product priorities
 
+## 0.8 delivered: local reliability and project management
+
+Atomic migration separates projects from sources, skips unchanged records and retains multi-window conflict protection. Project management adds search, favorites, recent ordering, rename, archive and recoverable Trash. Recovery supports both schemas; settings expose local storage and bounded session diagnostics. Closing backup/import dialogs stops or discards late work.
+
+Remaining gates: investigate the original host freeze and native download interoperability, profile realistic long sessions, then add lazy loading and per-revision storage where measured costs justify them. There is no permanent Trash purge yet. Optional accounts and cloud synchronization remain a later phase; this release adds no cloud data service.
+
+
 ## 0.7 delivered: questions, findings and a calmer working surface
 
 The primary workflow is now an objective-led research notebook with contextual evidence, personal notes, manual review and individual finding-to-brief insertion. The interface uses a light lime palette and a compact four-role type system. The optional sample is separate from first use; existing projects and exact source histories remain intact. Legacy comparisons and notebook edits are separate snapshots, documented rather than silently synchronized.

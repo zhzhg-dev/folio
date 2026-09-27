@@ -120,6 +120,10 @@ export async function restoreBackup(file: File): Promise<Project> {
     ...p,
     id: uid(),
     name: `${p.name} · restored`,
+    deletedAt: undefined,
+    archivedAt: undefined,
+    lastOpenedAt: undefined,
+    favorite: p.favorite === true,
     updatedAt: new Date().toISOString(),
   };
 }

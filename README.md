@@ -1,5 +1,15 @@
 # Folio
 
+## New in 0.8
+
+- **Manage projects:** search, favorites, recent ordering, rename, archive and Trash in a separate dialog. Restore retains sources, findings and history. Trash is local, never automatically emptied, and has no permanent-delete control in this release.
+- **Incremental local saves:** separate project and source records. Editing a note no longer rewrites unchanged sources or other projects. Legacy data migrates atomically; a failed migration leaves the old schema and data intact. Concurrent windows cannot silently overwrite a newer revision.
+- **Recovery and diagnostics:** safe-start recovery reads both schemas. Backups from Trash restore into a new active project. Settings show site storage usage, an optional browser persistence request, save write counts and bounded session-only long-task counters. None are uploaded.
+- **Task cleanup:** closing a backup dialog cancels its worker. Closed import dialogs cannot apply late results to another project. Project switching preserves the saved page.
+
+Keep an independent backup before upgrading or changing browsers. After migration, 0.7 and earlier cannot open the new schema; use the current recovery tools rather than downgrading. All projects still load into memory at startup; source updates still rewrite that source's complete history. Native downloads in the embedded browser and the original host-freeze root cause remain unresolved. See [verification](QA.md).
+
+
 **Keep the source. Own the writing.**
 
 A local-first research workspace for comparing options and writing evidence-backed decision briefs. Keep original passages close to your findings, distinguish facts from judgments, and revisit conclusions as sources change.
@@ -8,7 +18,7 @@ A local-first research workspace for comparing options and writing evidence-back
 
 Folio opens in English. Switch between **English / 中文** in the top bar on desktop and mobile; your preference is remembered. Changing the interface language never translates or overwrites your writing.
 
-> **0.7 working preview.** Questions, findings, source evidence and briefs now share one research workflow. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+> **0.8 working preview.** Questions, findings, source evidence and briefs now share one research workflow. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
 
 ## New in 0.7
 

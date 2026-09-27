@@ -75,8 +75,15 @@ import {
 } from "@/lib/folio/model";
 import { loadWorkspace, saveWorkspace } from "@/lib/folio/storage";
 import { createAutosave } from "@/lib/folio/autosave";
+import { startDiagnostics } from "@/lib/folio/diagnostics";
 import DocumentEditor from "./document-editor";
 import FeatureDialog from "./feature-dialog";
+import ProjectManager from "./project-manager";
+import {
+  changeProject,
+  openProject,
+  isActiveProject,
+} from "@/lib/folio/projects";
 import SourceDetail from "./source-detail";
 import Assistant from "./assistant";
 import ResearchNotebook from "./research-notebook";
@@ -195,6 +202,22 @@ export default function Workspace({
   languageRef.current = data.language;
   const project =
     data.projects.find((p) => p.id === data.activeId) || data.projects[0];
+  const activeProjects = data.projects.filter(isActiveProject);
+  const viewProjectId = useRef(project.id);
+  useEffect(startDiagnostics, []);
+  const selectProject = (id: string) => {
+    setData((d) => openProject(d, id));
+    setDialog(null);
+  };
+  useEffect(() => {
+    setSelectedSource(null);
+    setSelectedQuote("");
+    setSelectedVersionId("");
+    setEvidenceOpen(false);
+    setRightOpen(false);
+    setQuestionId("");
+    setView(project.lastView || "findings");
+  }, [project.id]);
   const notebook = notebookFor(project);
   const activeQuestion =
     notebook.questions.find((q) => q.id === questionId) ||
@@ -320,6 +343,10 @@ export default function Workspace({
     setEvidenceOpen(true);
   };
   useEffect(() => {
+    if (viewProjectId.current !== project.id) {
+      viewProjectId.current = project.id;
+      return;
+    }
     if (!loaded || project.lastView === view) return;
     updateProject({ lastView: view });
   }, [view, loaded, project.id]);
@@ -560,11 +587,7 @@ export default function Workspace({
       setExporting(false);
     }
   };
-  useWebMCP(project, data.projects, (id) => {
-    setData((d) => ({ ...d, activeId: id }));
-    setSelectedSource(null);
-    setView("editor");
-  });
+  useWebMCP(project, activeProjects, selectProject);
   const headings =
     project.content.content
       ?.filter((n) => n.type === "heading")
@@ -899,12 +922,12 @@ export default function Workspace({
               <ChevronDown size={13} />
             </summary>
             <div className="project-list">
-              {data.projects.map((p) => (
+              {activeProjects.map((p) => (
                 <button
                   key={p.id}
                   className={p.id === project.id ? "selected" : ""}
                   onClick={() => {
-                    setData((d) => ({ ...d, activeId: p.id }));
+                    setData((d) => openProject(d, p.id));
                     setSelectedSource(
                       p.sources.find((s) => s.id === p.reading?.sourceId) ||
                         null,
@@ -962,6 +985,13 @@ export default function Workspace({
             <Plus size={16} />
             {t("新建项目", "New project")}
           </button>
+          <button
+            className="new-project manage-projects-link"
+            onClick={() => setDialog("projects")}
+          >
+            <FolderOpen size={16} />
+            {t("管理项目", "Manage projects")}
+          </button>
         </NavigationContent>
         <SidebarFooter className="sidebar-bottom">
           <div className="local-note">
@@ -980,6 +1010,17 @@ export default function Workspace({
                   "Your work stays in this browser.",
                 )}
               </span>
+              {saving === "error" && (
+                <button
+                  className="text-action"
+                  onClick={() => {
+                    autosave.current?.schedule(data);
+                    void autosave.current?.flush();
+                  }}
+                >
+                  {t("重试保存", "Retry save")}
+                </button>
+              )}
             </div>
           </div>
           <button
@@ -1695,22 +1736,26 @@ export default function Workspace({
           }
         }}
       >
-        <DialogContent className="folio-dialog">
+        <DialogContent
+          className={`folio-dialog ${dialogKind === "projects" ? "project-manager-dialog" : ""}`}
+        >
           <DialogHeader>
             <DialogTitle>
-              {dialogKind === "question"
-                ? t("添加研究问题", "Add a research question")
-                : dialogKind === "new"
-                  ? t("开始一个新项目", "Start a new project")
-                  : dialogKind === "search"
-                    ? t("找到你的思路", "Find your thoughts")
-                    : dialogKind === "settings"
-                      ? t("工作空间设置", "Workspace settings")
-                      : dialogKind === "document"
-                        ? t("文档信息", "Document details")
-                        : dialogKind === "snapshot"
-                          ? t("保存文档版本", "Save document version")
-                          : t("添加到工作空间", "Add to your workspace")}
+              {dialogKind === "projects"
+                ? t("你的项目", "Your projects")
+                : dialogKind === "question"
+                  ? t("添加研究问题", "Add a research question")
+                  : dialogKind === "new"
+                    ? t("开始一个新项目", "Start a new project")
+                    : dialogKind === "search"
+                      ? t("找到你的思路", "Find your thoughts")
+                      : dialogKind === "settings"
+                        ? t("工作空间设置", "Workspace settings")
+                        : dialogKind === "document"
+                          ? t("文档信息", "Document details")
+                          : dialogKind === "snapshot"
+                            ? t("保存文档版本", "Save document version")
+                            : t("添加到工作空间", "Add to your workspace")}
             </DialogTitle>
             <DialogDescription>
               {t(
@@ -1719,7 +1764,18 @@ export default function Workspace({
               )}
             </DialogDescription>
           </DialogHeader>
-          {["import", "snapshot", "settings"].includes(dialogKind || "") ? (
+          {dialogKind === "projects" ? (
+            <ProjectManager
+              projects={data.projects}
+              activeId={data.activeId}
+              language={data.language}
+              onOpen={selectProject}
+              onAction={(id, action, name) =>
+                setData((d) => changeProject(d, id, action, name))
+              }
+              onNew={() => setDialog("new")}
+            />
+          ) : ["import", "snapshot", "settings"].includes(dialogKind || "") ? (
             <FeatureDialog
               key={dialogKind + (updateSourceId || "")}
               kind={dialogKind!}
@@ -1862,7 +1918,7 @@ export default function Workspace({
                 )}
               />
               <div className="search-results">
-                {data.projects
+                {activeProjects
                   .filter((p) =>
                     `${p.name}${p.reportTitle}`
                       .toLowerCase()
@@ -1872,7 +1928,7 @@ export default function Workspace({
                     <button
                       key={p.id}
                       onClick={() => {
-                        setData((d) => ({ ...d, activeId: p.id }));
+                        setData((d) => openProject(d, p.id));
                         setDialog(null);
                         setView("editor");
                       }}
@@ -1885,7 +1941,7 @@ export default function Workspace({
                       <ArrowUpRight size={16} />
                     </button>
                   ))}
-                {data.projects.flatMap((p) =>
+                {activeProjects.flatMap((p) =>
                   p.sources
                     .filter(
                       (s) =>
@@ -1913,7 +1969,7 @@ export default function Workspace({
                     )),
                 )}
                 {query.trim() &&
-                  !data.projects.some(
+                  !activeProjects.some(
                     (p) =>
                       (p.name + p.reportTitle)
                         .toLowerCase()

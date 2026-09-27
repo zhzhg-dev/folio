@@ -1,8 +1,10 @@
 import type { Project } from "./model";
+import { assembleWorkspace } from "./storage-shape.ts";
 
 // No schema upgrades, migrations, writes or seeded examples on the rescue path.
 export function readSavedProjects(
   factory: IDBFactory = indexedDB,
+  name = "folio-workspace",
 ): Promise<Project[]> {
   return new Promise((resolve, reject) => {
     let db: IDBDatabase | undefined;
@@ -21,7 +23,7 @@ export function readSavedProjects(
     );
     let request: IDBOpenDBRequest;
     try {
-      request = factory.open("folio-workspace");
+      request = factory.open(name);
     } catch (error) {
       finish(undefined, error);
       return;
@@ -48,7 +50,12 @@ export function readSavedProjects(
         return;
       }
       try {
-        const transaction = db.transaction("workspaces", "readonly");
+        const stores =
+          db.objectStoreNames.contains("projects") &&
+          db.objectStoreNames.contains("sources")
+            ? ["workspaces", "projects", "sources"]
+            : "workspaces";
+        const transaction = db.transaction(stores, "readonly");
         const row = transaction.objectStore("workspaces").get("main");
         row.onerror = () => finish(undefined, row.error);
         transaction.onabort = () =>
@@ -57,6 +64,39 @@ export function readSavedProjects(
             transaction.error || new Error("Local read interrupted"),
           );
         row.onsuccess = () => {
+          if (row.result?.manifest) {
+            try {
+              const normalized = transaction;
+              const projectRows = normalized.objectStore("projects").getAll();
+              const sourceRows = normalized.objectStore("sources").getAll();
+              normalized.onabort = () =>
+                finish(
+                  undefined,
+                  normalized.error || new Error("Local read interrupted"),
+                );
+              normalized.onerror = () =>
+                finish(
+                  undefined,
+                  normalized.error || new Error("Local read failed"),
+                );
+              normalized.oncomplete = () => {
+                try {
+                  finish(
+                    assembleWorkspace(
+                      row.result.manifest,
+                      projectRows.result,
+                      sourceRows.result,
+                    ).projects,
+                  );
+                } catch (error) {
+                  finish(undefined, error);
+                }
+              };
+            } catch (error) {
+              finish(undefined, error);
+            }
+            return;
+          }
           const projects = row.result?.data?.projects;
           if (projects === undefined) {
             finish([]);

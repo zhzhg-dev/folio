@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { readFile, sourceFromText, exportBackup } from "@/lib/folio/files";
 import { restoreBackupAsync } from "@/lib/folio/restore-task";
 import { errorMessage } from "@/lib/folio/i18n";
+import StorageHealth from "./storage-health";
 import type { Project, Source, Language } from "@/lib/folio/model";
 export default function FeatureDialog({
   kind,
@@ -46,7 +47,16 @@ export default function FeatureDialog({
   const [backupText, setBackupText] = useState("");
   const [restoring, setRestoring] = useState(false);
   const restoreJob = useRef<AbortController | null>(null);
-  useEffect(() => () => restoreJob.current?.abort(), []);
+  const backupJob = useRef<AbortController | null>(null);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      restoreJob.current?.abort();
+      backupJob.current?.abort();
+    };
+  }, []);
   const input = useRef<HTMLInputElement>(null);
   const restoreInput = useRef<HTMLInputElement>(null);
   const perform = async (fn: () => Promise<void>) => {
@@ -72,7 +82,10 @@ export default function FeatureDialog({
           t("每个项目最多 20 份资料", "Up to 20 sources per project"),
         );
       const sources: Source[] = [];
-      for (const file of Array.from(files)) sources.push(await readFile(file));
+      for (const file of Array.from(files)) {
+        sources.push(await readFile(file));
+        if (!mounted.current) return;
+      }
       onImport(sources, updateSourceId);
       onClose();
     });
@@ -101,6 +114,7 @@ export default function FeatureDialog({
   if (kind === "settings")
     return (
       <div className="settings-body">
+        <StorageHealth language={language} />
         <div className="setting-row">
           <span>{t("界面语言", "Interface language")}</span>
           <button className="secondary-button" onClick={onLanguage}>
@@ -114,7 +128,9 @@ export default function FeatureDialog({
             disabled={busy}
             onClick={() =>
               perform(async () => {
-                await exportBackup(project);
+                const controller = new AbortController();
+                backupJob.current = controller;
+                await exportBackup(project, { signal: controller.signal });
                 toast.success(
                   t(
                     "备份已准备好，请保存文件",
@@ -201,7 +217,7 @@ export default function FeatureDialog({
           </div>
         )}
         <p className="small-copy">
-          Folio 0.6.0 · {t("个人工作空间", "Personal workspace")}
+          Folio 0.8.0 · {t("个人工作空间", "Personal workspace")}
         </p>
         {error && (
           <p className="inline-error" role="alert">

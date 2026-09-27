@@ -1,5 +1,18 @@
 # Folio verification
 
+## 0.8 local reliability and project management — 2026-09-27
+
+- Type checking, 94 automated tests and production build pass. Nine new fake-indexeddb tests exercise legacy migration with original bytes and repeated source IDs across projects, selective writes, transaction rollback after an injected commit failure, stale-window refusal, failed migration rollback, normalized recovery reads, last-project Trash recovery, backup restoration from Trash and rejection of missing source records.
+- Editing a note writes one project and zero sources in the storage test; failed transactions can retry the same draft. This verifies write scope, not browser latency.
+- Actual browser: existing v1 projects migrated and remained accessible. Created a fictional bilingual source, searched/favorited its project, archived it, moved it to Trash and restored it; the source remained present.
+- Exported the actual test project as 1,400 characters through Copy backup text, restored that exact text and reloaded. Saved the copied text as a local fixture, then restored it through the production build's file-chooser flow. This verifies text and file restore, not native download completion.
+- The embedded browser's Save file action and download helper timed out. Save as completion remains unverified. Text backup fallback is limited to 2 MiB; file preparation must not be described as a completed disk save.
+- Checked desktop at 1440px and Chinese project management at 390px: document width 390px, dialog width 358px, no horizontal overflow. Restored English. Production loaded the built asset bundle; the inspected production console had no warnings/errors.
+- Development hot updates exposed a revision-baseline reset and correctly refused a stale save. The store now survives development hot replacement; storage implementation changes require a full reload for testing. Production checks used a fresh page at the same origin with saved records retained.
+- Storage usage includes cached offline/model resources. Persistence does not replace backup. Diagnostics retain only session counters and upload nothing. The original host freeze did not recur in these controlled checks; its root cause, longer-session behavior and browser download interoperability remain unresolved.
+- All projects/sources still load at startup; a changed source rewrites its complete revision history. Trash is retained indefinitely with no permanent-purge control. Old app versions cannot open the new database schema.
+
+
 ## 0.7 research notebook and light interface — 2026-09-27
 
 - Type checking and 85 automated tests pass. Seven notebook tests cover blank English first use, traceable bilingual samples, non-mutating legacy comparison access, review reset/staleness, exact brief citations and notes, selected-passage adoption, backup round trips and malformed notebook rejection.

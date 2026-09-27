@@ -1995,3 +1995,46 @@ textarea:focus-visible {
 .field-input {
   color: #4c6340;
 }
+/* Project management remains a separate, quiet working surface. */
+.project-manager-dialog { width: min(720px, calc(100vw - 32px)); max-width: 720px; }
+.project-manager-toolbar { display: flex; gap: 12px; align-items: center; margin: 8px 0 18px; }
+.project-manager-search { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; border: 1px solid #dfe2d9; border-radius: 8px; padding: 10px 12px; }
+.project-manager-search svg { color: #7b8170; flex-shrink: 0; }
+.project-manager-search input { border: 0; outline: 0; background: transparent; width: 100%; min-width: 0; font-size: .875rem; }
+.project-manager-tabs { background: #f1f3eb; margin-bottom: 12px; }
+.project-manager-tabs [data-state='active'] { background: #fff; color: #29331a; }
+.managed-projects { min-height: 180px; max-height: 44vh; overflow-y: auto; }
+.managed-project { display: flex; gap: 12px; align-items: center; padding: 18px 2px; border-bottom: 1px solid #edf0e7; }
+.managed-project-icon { color: #849060; flex-shrink: 0; }
+.managed-project-content { flex: 1; min-width: 0; }
+.managed-project-title { display: flex; flex-wrap: wrap; text-align: left; align-items: center; gap: 8px; font-size: .9375rem; font-weight: 550; color: #30362b; overflow-wrap: anywhere; }
+.managed-project-title:disabled { cursor: default; opacity: 1; }
+.managed-project-title span { font-size: .75rem; font-weight: 450; color: #58613e; background: #edf3d8; border-radius: 4px; padding: 2px 6px; }
+.managed-project-content p { font-size: .8125rem; color: #7a8071; margin: 5px 0 0; }
+.managed-project-content p span { margin: 0 7px; }
+.project-star { color: #949b89; }
+.project-star.is-favorite { color: #657c20; }
+.project-star.is-favorite svg { fill: #dde8b0; }
+.project-manager-empty { display: grid; justify-items: center; gap: 12px; padding: 48px 10px; color: #878d7c; font-size: .875rem; }
+.project-manager-notice { min-height: 22px; font-size: .8125rem; line-height: 1.6; color: #707764; margin: 16px 0 0; }
+.project-rename { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .875rem; }
+.project-rename input { width: 100%; border: 1px solid #bac598; border-radius: 5px; padding: 6px; }
+.project-rename button { color: #60752b; }
+.storage-health { border-bottom: 1px solid #e6e9df; padding: 4px 0 18px; margin-bottom: 6px; }
+.storage-health-title, .storage-protection { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: .875rem; }
+.storage-health-title strong { font-weight: 550; }
+.storage-health-title span { color: #79806e; }
+.storage-health p { color: #747b69; font-size: .8125rem; line-height: 1.65; margin: 10px 0; }
+.storage-protection { margin-top: 14px; flex-wrap: wrap; }
+.storage-details { margin-top: 16px; font-size: .8125rem; color: #747b69; }
+.storage-details summary { cursor: pointer; }
+.manage-projects-link { margin-top: 4px !important; }
+@media (max-width: 540px) {
+  .project-manager-toolbar { align-items: stretch; flex-direction: column; }
+  .managed-project { gap: 8px; flex-wrap: wrap; }
+  .managed-project-content { min-width: 130px; }
+  .managed-project-icon { display: none; }
+  .managed-project .secondary-button { padding: 7px 9px; }
+}
+.project-manager-search:focus-within { border-color: #9ba96c; box-shadow: 0 0 0 2px #e8efd8; }
+.project-manager-search input:focus-visible { outline: none !important; box-shadow: none !important; }

@@ -94,6 +94,10 @@ export type Project = {
   lastView?: string;
   comparison?: Comparison;
   notebook?: Notebook;
+  archivedAt?: string;
+  deletedAt?: string;
+  lastOpenedAt?: string;
+  favorite?: boolean;
 };
 export type Finding = {
   id: string;
