@@ -1,5 +1,14 @@
 # Folio verification
 
+## 0.9 optional account and cloud backups — 2026-10-03
+
+- Type checking, 106 automated tests and the production build pass. Eleven cloud tests use actual local D1/R2 bindings: anonymous rejection, per-owner list/read/delete isolation, account-change and cross-origin checks, byte-identical original/citation restoration, immutable idempotency, upload size and atomic count/byte quotas, corrupted-backup rejection, interrupted writes and recoverable deletion. An offline-worker test excludes API and authentication routes from interception.
+- The compiled 13.55 KB Worker was also executed under workerd: its fetch handler delegates assets, rejects anonymous data access and completes a D1/R2 save/download round trip. This is a production-bundle runtime check, not only a test of the source handler.
+- Browser: created a separate fictional bilingual text project, opened the account tab, completed the development sign-in flow, saved one cloud version, and restored a new local project retaining its source. English desktop and Chinese 390px layouts were checked; document width remained 390px with no horizontal overflow. No warnings/errors appeared in the inspected app console.
+- Local sign-in uses the bundled loopback-only mock account. Production authentication relies on Sites dispatch and its verified user headers. Automated fixtures simulate two verified owners; this does not establish a live two-person OAuth test or a test on a second physical device. No real user documents were uploaded during QA.
+- Storage remains local by default. Cloud saves are explicit, immutable and limited to 10 MiB each, 20 versions and 100 MiB per account. Restore creates a new local project. Cloud deletion is permanent after confirmation; local copies remain. Pending failed uploads count against limits and clear on refresh after one hour. Real-time synchronization, automatic merging, collaboration and end-to-end encryption are absent.
+- The original freeze investigation is deferred as requested. These changes do not claim its cause or resolution. The existing owner-only Site audience is preserved; publishing GitHub code does not change access to the hosted app.
+
 ## 0.8 local reliability and project management — 2026-09-27
 
 - Type checking, 94 automated tests and production build pass. Nine new fake-indexeddb tests exercise legacy migration with original bytes and repeated source IDs across projects, selective writes, transaction rollback after an injected commit failure, stale-window refusal, failed migration rollback, normalized recovery reads, last-project Trash recovery, backup restoration from Trash and rejection of missing source records.

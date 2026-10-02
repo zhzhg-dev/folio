@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -18,14 +14,9 @@
     "jsx": "react-jsx",
     "incremental": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
-    "types": [
-      "node",
-      "vite/client"
-    ],
+    "types": ["node", "vite/client"],
     "allowImportingTsExtensions": true
   },
   "include": [
@@ -37,10 +28,11 @@
     "hooks/**/*.ts",
     "main.ts",
     "render.tsx",
-    "vite.config.ts"
+    "vite.config.ts",
+    "vite.worker.config.ts",
+    "server/**/*.ts",
+    "db/**/*.ts",
+    "tooling/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "examples"
-  ]
+  "exclude": ["node_modules", "examples"]
 }

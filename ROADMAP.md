@@ -1,5 +1,11 @@
 # Folio product priorities
 
+## Current direction — 0.9
+
+The owner explicitly deferred the original freeze investigation and requested continued product development. This supersedes the older sequencing below. 0.9 adds optional ChatGPT identity on Sites, private per-account immutable cloud backups, complete validation, bounded quotas and restore-as-copy across devices. It retains local editing and has no automatic uploads, automatic merging, real-time sync or collaboration.
+
+Next product work: improve source-change impact review and prepare permission-controlled read-only sharing. Before changing the hosted audience, verify the production sign-in journey, resource budget and multi-account access policy. Public-user recruitment remains deferred. Keep the existing freeze and native-download issues open without letting this release imply that they were diagnosed.
+
 ## 0.8 delivered: local reliability and project management
 
 Atomic migration separates projects from sources, skips unchanged records and retains multi-window conflict protection. Project management adds search, favorites, recent ordering, rename, archive and recoverable Trash. Recovery supports both schemas; settings expose local storage and bounded session diagnostics. Closing backup/import dialogs stops or discards late work.

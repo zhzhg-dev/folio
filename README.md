@@ -1,5 +1,14 @@
 # Folio
 
+## New in 0.9
+
+- **Optional account and cloud backups:** open My workspace → Account & cloud. The hosted Site uses ChatGPT sign-in; signing in never uploads your work automatically. Save a complete project version and restore a separate local copy on another device signed into the same account.
+- **Private, immutable versions:** server-side ownership checks, a database index, private object storage, original-file checksums, and atomic quota reservations. Each save is a new version; no automatic merge or background synchronization.
+- **Bounded storage:** up to 20 versions, 100 MiB per account and 10 MiB per complete backup. Larger projects still support local export. Delete individual cloud versions after confirmation; local copies remain. Interrupted operations can complete server-side, so refresh to check the outcome. Unfinished reservations clear on refresh after one hour.
+- **Calmer settings:** Device & preferences and Account & cloud are separate tabs. The main research surface remains unchanged, with English and Chinese available throughout the new flow.
+
+The existing Site's audience remains owner-only. Public GitHub source does not make the hosted app public. Cloud backups are manual, not real-time synchronization or collaboration. The original freeze investigation is deferred at the owner's request, not declared resolved.
+
 ## New in 0.8
 
 - **Manage projects:** search, favorites, recent ordering, rename, archive and Trash in a separate dialog. Restore retains sources, findings and history. Trash is local, never automatically emptied, and has no permanent-delete control in this release.
@@ -18,7 +27,7 @@ A local-first research workspace for comparing options and writing evidence-back
 
 Folio opens in English. Switch between **English / 中文** in the top bar on desktop and mobile; your preference is remembered. Changing the interface language never translates or overwrites your writing.
 
-> **0.8 working preview.** Questions, findings, source evidence and briefs now share one research workflow. On-device AI is experimental; cloud sync, collaboration, and OCR are not implemented.
+> **0.9 working preview.** Questions, findings, source evidence and briefs share one research workflow. Optional cloud backups are available on Sites. On-device AI is experimental; automatic sync, collaboration, and OCR are not implemented.
 
 ## New in 0.7
 
@@ -77,7 +86,9 @@ npm run build
 npm start
 ```
 
-`npm start` previews the production build. Deploy `dist/` to an HTTPS static host at the site root. `.openai/hosting.json` belongs to this project's existing Sites deployment; configure your own host when forking. The development server listens on localhost only.
+`npm start` previews the production build with a local D1/R2 simulator. Both local commands simulate sign-in with a fixed development account; they do not authenticate to ChatGPT or upload to the hosted Site. Test data stays under ignored `.wrangler/cloud/`. `npm run db:generate` appends Drizzle migrations after schema changes.
+
+Production builds contain `dist/client/` assets, `dist/server/index.js` and `dist/.openai/` hosting metadata/migrations. The Sites dispatcher owns real sign-in and verified user headers, with D1 (`DB`) and private R2 (`BUCKET`) bindings. **Do not expose this Worker directly on a public host:** its identity boundary is Sites dispatch, not arbitrary client headers. `.openai/hosting.json` belongs to the existing Site; configure your own project when forking. A local-only fork can host just `dist/client/`; cloud features will show unavailable without the backend. Local servers listen on loopback only.
 
 ## What you can do
 
@@ -107,9 +118,9 @@ The starter document and its sources are **fictional demonstration material**, n
 
 ## Your data and running costs
 
-Documents, original source files, and history stay in IndexedDB in the current browser. Folio has no document backend, telemetry, or cloud upload. Data is separate for each browser and site address. **Export a backup before clearing browser storage, moving to another address, or changing devices.** Local storage is not encrypted storage and does not replace backups.
+Documents, original source files, and history save automatically to IndexedDB in the current browser. Only **Save to cloud** uploads the selected project's full backup to private object storage; a database stores ownership, project name, size, timestamp and checksum. Signed-in accounts can access only their own backups. This is not end-to-end encrypted storage. There is no application telemetry. Data on the device remains separate for each browser and address. **Keep an independent backup before clearing browser data or changing devices.** Signing out does not remove local copies.
 
-Core features make no paid API calls. Local AI needs an initial model download and consumes your device's memory, GPU resources, and storage. Model hosts receive ordinary download requests; your source text is not sent to them for inference. Hardware compatibility and download availability vary.
+Local features make no paid API calls. Cloud backup uses the host's database and object-storage resources; the release does not promise unlimited free hosting. Local AI needs an initial model download and consumes your device's memory, GPU resources, and storage. Model hosts receive ordinary download requests; your source text is not sent to them for inference. Hardware compatibility and download availability vary.
 
 Normal startup caches the small application shell sequentially. Optional PDF, AI and font resources are cached as used, rather than downloaded all at once. Offline use requires the relevant resources to have been cached. Safe startup does not register an offline worker. Private preview authentication and the first visit still require a connection.
 
@@ -156,7 +167,7 @@ tests/                     Integrity, export, and migration tests
 scripts/create-offline.mjs Offline app-shell generation
 ```
 
-Built with React 19, TypeScript, Vite, Tiptap, Dexie, PDF.js, WebLLM, and Radix primitives. The static architecture keeps core data on the user's device and avoids an application-server bill.
+Built with React 19, TypeScript, Vite, Tiptap, Dexie, PDF.js, WebLLM, and Radix primitives. Local editing uses IndexedDB; the optional server in `server/` provides account-scoped cloud backup. Schema and immutable migrations live in `db/` and `drizzle/`.
 
 ## Development
 

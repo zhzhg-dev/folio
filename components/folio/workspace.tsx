@@ -172,7 +172,7 @@ export default function Workspace({
   const [questionId, setQuestionId] = useState("");
   const [newQuestion, setNewQuestion] = useState("");
   const [focus, setFocus] = useState(false);
-  const [dialog, setDialog] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<string | null>(() => new URLSearchParams(location.search).get("account") === "1" ? "settings" : null);
   const dialogRef = useRef<string | null>(null);
   if (dialog) dialogRef.current = dialog;
   const dialogKind = dialog || dialogRef.current;
@@ -1006,8 +1006,8 @@ export default function Workspace({
               </strong>
               <span>
                 {t(
-                  "资料始终留在你的浏览器",
-                  "Your work stays in this browser.",
+                  "云备份由你选择开启",
+                  "Cloud backups, when you choose.",
                 )}
               </span>
               {saving === "error" && (
@@ -1759,8 +1759,8 @@ export default function Workspace({
             </DialogTitle>
             <DialogDescription>
               {t(
-                "这里的内容保存在当前浏览器中。",
-                "Your work is stored in this browser.",
+                "自动保存到本机，云备份由你选择。",
+                "Saved locally. Cloud backups are your choice.",
               )}
             </DialogDescription>
           </DialogHeader>

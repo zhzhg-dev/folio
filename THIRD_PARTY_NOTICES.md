@@ -3,6 +3,7 @@
 Folio's MIT license does not replace third-party licenses.
 
 - npm dependencies retain their package licenses and authorship notices. The lockfile records exact installed versions.
+- `tooling/sites-vite-plugin.ts` is vendored from `@openai/sites-vite-plugin` 0.2.0. Its MIT license is retained alongside the file. It supplies development-only loopback sign-in and build metadata copying.
 - `public/pdf.worker.min.mjs` comes from `pdfjs-dist`. PDF.js uses Apache-2.0; its included license notice must be retained.
 - UI primitives and `vendor/shadcn-tailwind-4.13.0.css` derive from the starter's Shadcn integration and retain their upstream terms.
 - WebLLM / MLC and downloaded Qwen assets have their own software and model licenses. Weights are downloaded only when local AI is enabled, and are not included in the repository.

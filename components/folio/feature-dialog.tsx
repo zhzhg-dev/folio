@@ -16,6 +16,7 @@ import { readFile, sourceFromText, exportBackup } from "@/lib/folio/files";
 import { restoreBackupAsync } from "@/lib/folio/restore-task";
 import { errorMessage } from "@/lib/folio/i18n";
 import StorageHealth from "./storage-health";
+import CloudBackups from "./cloud-backups";
 import type { Project, Source, Language } from "@/lib/folio/model";
 export default function FeatureDialog({
   kind,
@@ -113,118 +114,142 @@ export default function FeatureDialog({
     });
   if (kind === "settings")
     return (
-      <div className="settings-body">
-        <StorageHealth language={language} />
-        <div className="setting-row">
-          <span>{t("界面语言", "Interface language")}</span>
-          <button className="secondary-button" onClick={onLanguage}>
-            {language === "zh" ? "English" : "简体中文"}
-          </button>
-        </div>
-        <div className="setting-row">
-          <span>{t("备份当前项目", "Back up this project")}</span>
-          <button
-            className="secondary-button"
-            disabled={busy}
-            onClick={() =>
-              perform(async () => {
-                const controller = new AbortController();
-                backupJob.current = controller;
-                await exportBackup(project, { signal: controller.signal });
-                toast.success(
-                  t(
-                    "备份已准备好，请保存文件",
-                    "Backup ready. Save the file below",
-                  ),
-                );
-              })
-            }
-          >
-            <Download size={14} />
-            {t("导出备份", "Export backup")}
-          </button>
-        </div>
-        <div className="setting-row">
-          <span>{t("从备份恢复", "Restore a project")}</span>
-          <button
-            className="secondary-button"
-            disabled={busy}
-            onClick={() => restoreInput.current?.click()}
-          >
-            <RotateCcw size={14} />
-            {t("选择备份", "Choose backup")}
-          </button>
-        </div>
-        <input
-          hidden
-          ref={restoreInput}
-          type="file"
-          accept=".json"
-          onChange={(e) => restore(e.target.files?.[0])}
-        />
-        <div className="setting-note">
-          <ShieldCheck size={19} />
-          <p>
-            {t(
-              "资料与正文保存在当前浏览器。清理浏览器数据或更换网址前，请先导出备份。恢复会创建一个新项目。",
-              "Your data stays in this browser. Back up before clearing browser data or moving to a different address. Restoring creates a new project.",
-            )}
-          </p>
-        </div>
-        <details className="backup-text-restore">
-          <summary>{t("从备份文本恢复", "Restore from backup text")}</summary>
-          <p className="small-copy">
-            {t(
-              "适用于下载受限时复制的小型项目备份。恢复会创建新项目。",
-              "For small project backups copied when downloads are unavailable. Restoring creates a new project.",
-            )}
-          </p>
-          <textarea
-            aria-label={t("粘贴备份文本", "Paste backup text")}
-            rows={4}
-            maxLength={2 * 1024 * 1024}
-            value={backupText}
-            onChange={(e) => setBackupText(e.target.value)}
-            placeholder={t(
-              "在这里粘贴 Folio 备份文本…",
-              "Paste your Folio backup text here…",
-            )}
+      <Tabs
+        className="settings-body settings-tabs"
+        defaultValue={
+          new URLSearchParams(location.search).get("account") === "1"
+            ? "cloud"
+            : "device"
+        }
+      >
+        <TabsList aria-label={t("工作空间设置", "Workspace settings")}>
+          <TabsTrigger value="device">
+            {t("本机与偏好", "Device & preferences")}
+          </TabsTrigger>
+          <TabsTrigger value="cloud">
+            {t("账号与云备份", "Account & cloud")}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="cloud">
+          <CloudBackups
+            project={project}
+            language={language}
+            onRestore={onRestore}
           />
-          <button
-            className="secondary-button"
-            disabled={busy || !backupText.trim()}
-            onClick={() =>
-              restore(
-                new File([backupText], "pasted.folio.json", {
-                  type: "application/json",
-                }),
-              )
-            }
-          >
-            {t("恢复此备份", "Restore this backup")}
-          </button>
-        </details>
-        {restoring && (
-          <div className="comparison-search-status" role="status">
-            <Loader2 size={16} className="spin" />
-            <span>{t("正在校验备份…", "Checking your backup…")}</span>
-            <button
-              className="text-action"
-              onClick={() => restoreJob.current?.abort()}
-            >
-              {t("取消恢复", "Cancel restore")}
+        </TabsContent>
+        <TabsContent value="device">
+          <StorageHealth language={language} />
+          <div className="setting-row">
+            <span>{t("界面语言", "Interface language")}</span>
+            <button className="secondary-button" onClick={onLanguage}>
+              {language === "zh" ? "English" : "简体中文"}
             </button>
           </div>
-        )}
-        <p className="small-copy">
-          Folio 0.8.0 · {t("个人工作空间", "Personal workspace")}
-        </p>
-        {error && (
-          <p className="inline-error" role="alert">
-            {error}
+          <div className="setting-row">
+            <span>{t("备份当前项目", "Back up this project")}</span>
+            <button
+              className="secondary-button"
+              disabled={busy}
+              onClick={() =>
+                perform(async () => {
+                  const controller = new AbortController();
+                  backupJob.current = controller;
+                  await exportBackup(project, { signal: controller.signal });
+                  toast.success(
+                    t(
+                      "备份已准备好，请保存文件",
+                      "Backup ready. Save the file below",
+                    ),
+                  );
+                })
+              }
+            >
+              <Download size={14} />
+              {t("导出备份", "Export backup")}
+            </button>
+          </div>
+          <div className="setting-row">
+            <span>{t("从备份恢复", "Restore a project")}</span>
+            <button
+              className="secondary-button"
+              disabled={busy}
+              onClick={() => restoreInput.current?.click()}
+            >
+              <RotateCcw size={14} />
+              {t("选择备份", "Choose backup")}
+            </button>
+          </div>
+          <input
+            hidden
+            ref={restoreInput}
+            type="file"
+            accept=".json"
+            onChange={(e) => restore(e.target.files?.[0])}
+          />
+          <div className="setting-note">
+            <ShieldCheck size={19} />
+            <p>
+              {t(
+                "工作自动保存在本机。仅在你选择云备份时上传。清理浏览器数据前，请保留独立备份。恢复会新建项目。",
+                "Work saves automatically on this device. Uploads happen only when you choose cloud backup. Keep a backup before clearing browser data. Restoring creates a new project.",
+              )}
+            </p>
+          </div>
+          <details className="backup-text-restore">
+            <summary>{t("从备份文本恢复", "Restore from backup text")}</summary>
+            <p className="small-copy">
+              {t(
+                "适用于下载受限时复制的小型项目备份。恢复会创建新项目。",
+                "For small project backups copied when downloads are unavailable. Restoring creates a new project.",
+              )}
+            </p>
+            <textarea
+              aria-label={t("粘贴备份文本", "Paste backup text")}
+              rows={4}
+              maxLength={2 * 1024 * 1024}
+              value={backupText}
+              onChange={(e) => setBackupText(e.target.value)}
+              placeholder={t(
+                "在这里粘贴 Folio 备份文本…",
+                "Paste your Folio backup text here…",
+              )}
+            />
+            <button
+              className="secondary-button"
+              disabled={busy || !backupText.trim()}
+              onClick={() =>
+                restore(
+                  new File([backupText], "pasted.folio.json", {
+                    type: "application/json",
+                  }),
+                )
+              }
+            >
+              {t("恢复此备份", "Restore this backup")}
+            </button>
+          </details>
+          {restoring && (
+            <div className="comparison-search-status" role="status">
+              <Loader2 size={16} className="spin" />
+              <span>{t("正在校验备份…", "Checking your backup…")}</span>
+              <button
+                className="text-action"
+                onClick={() => restoreJob.current?.abort()}
+              >
+                {t("取消恢复", "Cancel restore")}
+              </button>
+            </div>
+          )}
+          <p className="small-copy">
+            Folio 0.9.0 · {t("个人工作空间", "Personal workspace")}
           </p>
-        )}
-      </div>
+          {error && (
+            <p className="inline-error" role="alert">
+              {error}
+            </p>
+          )}
+        </TabsContent>
+      </Tabs>
     );
   if (kind === "snapshot")
     return (

@@ -1,5 +1,14 @@
 # Folio
 
+## 0.9 更新
+
+- **可选账号与云备份**：我的工作空间 → 账号与云备份。托管网站使用 ChatGPT 登录，登录不会自动上传资料。手动保存完整项目版本，另一台设备登录同一账号后可恢复为新的本机副本。
+- **按账号隔离**：数据库记录归属、名称、时间、大小和校验值，私有对象存储保存备份。服务端校验权限、原文件完整性及容量；每次保存新建版本，不自动合并。
+- **控制容量**：每账号最多 20 个版本、100 MiB；单份完整备份最多 10 MiB。较大项目仍可本机导出。删除云版本需二次确认，不删除本机副本。操作中断后需刷新确认结果；未完成的容量预留在一小时后刷新时释放。
+- **设置分层**：本机与偏好、账号与云备份分别展示，保留浅色黄绿色风格和完整中英文界面。
+
+托管网站仍仅限所有者访问；GitHub 公开不等于网站公开。本版是手动云备份，不是实时同步或多人协作。按所有者要求，原始卡死根因调查暂缓，不宣称已修复。
+
 ## 0.8 更新
 
 - **项目管理**：搜索、收藏、最近访问排序、重命名、归档和回收站集中在单独窗口。恢复保留原资料、研究发现和历史。回收站留在本机，不自动清空；本版不提供永久删除。
@@ -7,7 +16,7 @@
 - **恢复与诊断**：安全启动兼容新旧数据库，回收站备份恢复为独立的当前项目。设置可查看网站占用空间、申请持久存储，并查看保存耗时、写入数量和本次会话的长任务计数。诊断不上传，持久存储不替代备份。
 - **任务收尾**：关闭备份窗口会取消后台任务；关闭导入窗口后，不会把迟到的结果写入其他项目。切换项目保留原来的页面。
 
-升级或换浏览器前请保留独立备份。迁移后，0.7 及更早版本不能直接打开新结构，请使用当前恢复入口而非降级。启动时仍加载全部项目，更新资料时仍写入该资料完整历史。内置浏览器下载兼容与原始卡死根因尚未解决，详见 [验证记录](QA.md)。账号与云同步尚未实现。
+升级或换浏览器前请保留独立备份。迁移后，0.7 及更早版本不能直接打开新结构，请使用当前恢复入口而非降级。启动时仍加载全部项目，更新资料时仍写入该资料完整历史。内置浏览器下载兼容与原始卡死根因尚未解决，详见 [验证记录](QA.md)。
 
 
 [English](README.md) · 简体中文
@@ -18,7 +27,7 @@
 
 A local-first workspace for sources and writing. Import evidence, write with versioned citations, and review what changed without losing your own edits.
 
-> 0.8 可运行预览版。研究问题、发现、证据和简报已接通；本地 AI 仍是实验功能。
+> 0.9 可运行预览版。研究问题、发现、证据和简报已接通，Sites 托管版提供可选云备份；本地 AI 仍是实验功能。
 
 ## 0.7 更新
 
@@ -79,7 +88,9 @@ npm run build
 npm start
 ```
 
-`npm start` 预览生产构建。生产文件在 `dist/`，可部署到支持 HTTPS 的静态托管；目前按站点根路径部署。开发服务仅监听本机。
+`npm start` 预览生产构建，附带本地 D1/R2 模拟器。本地开发和预览使用固定测试账号模拟登录，不会连接 ChatGPT 认证或上传到线上网站；测试数据位于被忽略的 `.wrangler/cloud/`。修改数据库结构后使用 `npm run db:generate` 追加迁移。
+
+生产输出为 `dist/client/`、`dist/server/index.js` 及 `dist/.openai/`。Sites 提供真实登录、可信身份头和 DB/BUCKET 存储绑定。**不要将此 Worker 直接暴露到其他公共托管**，否则缺少可信身份边界。Fork 时应配置自己的托管项目。只部署 `dist/client/` 可继续使用本机功能，但云端入口会显示不可用。开发服务仅监听本机。
 
 ## 已实现
 
@@ -113,9 +124,9 @@ npm start
 
 ## 数据与成本
 
-正文、资料原文件和历史记录保存在当前浏览器的 IndexedDB；没有应用后端、遥测或云端文档上传。数据按网址和浏览器隔离。**清理浏览器数据、更换网址或设备前请导出备份。** 本地存储不等于加密存储，也不能替代备份。
+正文、资料原文件和历史记录自动保存在当前浏览器的 IndexedDB。仅点击「保存到云端」时，才将当前项目完整备份上传至私有对象存储；数据库保存账号归属、名称、大小、时间及校验值。每个账号只能访问自己的备份，不属于端到端加密存储。没有应用遥测。本机数据按网址和浏览器隔离。**清理浏览器数据、更换设备前请保留独立备份。** 退出账号不会删除本机副本。
 
-核心功能不调用付费 API。本地 AI 首次需联网下载较大的模型文件，占用设备显存、内存和磁盘。文件托管服务会收到常规下载请求，资料文本不会因此上传。下载可用性及硬件支持取决于设备与网络，应用没有代付推理费用。
+本机功能不调用付费 API；云备份使用托管平台的数据库和文件存储资源，不承诺无限免费。本地 AI 首次需联网下载较大的模型文件，占用设备显存、内存和磁盘。文件托管服务会收到常规下载请求，资料文本不会因此上传。下载可用性及硬件支持取决于设备与网络，应用没有代付推理费用。
 
 正常启动只顺序缓存少量核心应用文件，PDF、AI 和字体资源按使用情况缓存，不再一次性下载全部文件。离线使用要求相应资源已被缓存；安全启动不会注册新的离线缓存任务。私有站点登录和首次访问仍需网络。
 
@@ -160,7 +171,7 @@ tests/                     数据完整性与导出检查
 scripts/create-offline.mjs 离线缓存构建
 ```
 
-React 19、TypeScript、Vite、Tiptap、Dexie、PDF.js、WebLLM；Shadcn / Radix 基础组件与定制样式。静态架构使核心数据留在用户设备，也减少个人维护时的服务器费用。
+React 19、TypeScript、Vite、Tiptap、Dexie、PDF.js、WebLLM；Shadcn / Radix 基础组件与定制样式。本机编辑使用 IndexedDB，可选云备份服务位于 `server/`，数据库结构与迁移位于 `db/`、`drizzle/`。
 
 ## 验证与后续
 
@@ -170,7 +181,7 @@ React 19、TypeScript、Vite、Tiptap、Dexie、PDF.js、WebLLM；Shadcn / Radix
 
 Run `npm ci`, then `npm run dev` and visit `http://127.0.0.1:5174`. Switch language in workspace settings. Import a text PDF, Markdown or TXT source, write a note and insert citations. Updating a source retains old evidence and manual writing. Review outdated citations individually. Export Word, Markdown or HTML, or back up an entire project as JSON.
 
-All document data is browser-local. Back up before clearing storage or changing origins. Local AI is optional and experimental; it requires WebGPU, a model download and enough memory. Retrieval is currently keyword-based and limited. Citations prove provenance, not factual correctness. Cloud sync and OCR are not implemented.
+Work saves locally. Manual cloud backup uploads only the selected project; restoring creates a separate local copy. Back up before clearing storage or changing origins. Local AI is optional and experimental; it requires WebGPU, a model download and enough memory. Retrieval is keyword-based. Citations prove provenance, not factual correctness. Automatic sync and OCR are not implemented.
 
 ## License
 

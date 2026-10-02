@@ -292,3 +292,31 @@ test("offline install downloads only core files, sequentially", async () => {
   assert.equal(peak, 1);
   assert.deepEqual(fetched, core);
 });
+test("offline worker never handles account, authentication or backup requests", () => {
+  const handlers = {};
+  vm.runInNewContext(serviceWorkerSource("folio-test", [], []), {
+    URL,
+    self: {
+      addEventListener: (name, fn) => (handlers[name] = fn),
+      location: { origin: "https://folio.test" },
+    },
+  });
+  for (const path of [
+    "/api/cloud/session",
+    "/api/cloud/backups",
+    "/signin-with-chatgpt",
+    "/signout-with-chatgpt",
+    "/callback",
+  ]) {
+    handlers.fetch({
+      request: {
+        url: `https://folio.test${path}`,
+        method: "GET",
+        mode: "navigate",
+      },
+      respondWith() {
+        assert.fail("Sensitive route intercepted by offline cache");
+      },
+    });
+  }
+});

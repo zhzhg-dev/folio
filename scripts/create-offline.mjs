@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { coreAssets, serviceWorkerSource } from "./offline-shell.mjs";
-const output = path.resolve("dist");
+const output = path.resolve("dist/client");
 await fs.access(path.join(output, "index.html"));
 async function list(dir) {
   const entries = await fs.readdir(dir, { withFileTypes: true });
