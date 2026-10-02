@@ -98,6 +98,8 @@ export type Project = {
   deletedAt?: string;
   lastOpenedAt?: string;
   favorite?: boolean;
+  deliveries?: import("./delivery.ts").Delivery[];
+  reviewHistory?: import("./review.ts").ReviewRevision[];
 };
 export type Finding = {
   id: string;

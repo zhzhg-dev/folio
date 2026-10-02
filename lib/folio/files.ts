@@ -13,6 +13,7 @@ export { hashBytes } from "./file-hash.ts";
 export { restoreBackup } from "./backup-restore.ts";
 import { prepareBackup, saveDownload } from "./backup-export.ts";
 import type { BackupOptions } from "./backup.ts";
+import { headingLevel } from "./delivery.ts";
 export function download(blob: Blob, name: string) {
   saveDownload(blob, name);
 }
@@ -195,7 +196,7 @@ export function exportHtml(project: Project, language: Language = "en") {
         {
           doc: "main",
           paragraph: "p",
-          heading: `h${node.attrs?.level || 2}`,
+          heading: `h${headingLevel(node.attrs?.level)}`,
           bulletList: "ul",
           orderedList: "ol",
           listItem: "li",

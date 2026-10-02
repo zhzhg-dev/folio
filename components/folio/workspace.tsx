@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   BookOpen,
   Search,
@@ -97,6 +97,12 @@ import {
 } from "@/lib/folio/notebook";
 import type { Finding } from "@/lib/folio/model";
 import ReviewView from "./review-view";
+import DeliveryView from "./delivery-view";
+import {
+  projectReview,
+  replaceCitation,
+  type CitationTarget,
+} from "@/lib/folio/review";
 import ComparisonView from "./comparison-view";
 import {
   emptyComparison,
@@ -109,7 +115,7 @@ import {
   exportHtml,
   exportBackup,
 } from "@/lib/folio/files";
-import { countChanges, citationStatus } from "@/lib/folio/integrity";
+import { citationStatus } from "@/lib/folio/integrity";
 import type { Draft } from "@/lib/folio/ai";
 import { useWebMCP } from "./webmcp";
 import { errorMessage } from "@/lib/folio/i18n";
@@ -172,7 +178,11 @@ export default function Workspace({
   const [questionId, setQuestionId] = useState("");
   const [newQuestion, setNewQuestion] = useState("");
   const [focus, setFocus] = useState(false);
-  const [dialog, setDialog] = useState<string | null>(() => new URLSearchParams(location.search).get("account") === "1" ? "settings" : null);
+  const [dialog, setDialog] = useState<string | null>(() =>
+    new URLSearchParams(location.search).get("account") === "1"
+      ? "settings"
+      : null,
+  );
   const dialogRef = useRef<string | null>(null);
   if (dialog) dialogRef.current = dialog;
   const dialogKind = dialog || dialogRef.current;
@@ -183,9 +193,8 @@ export default function Workspace({
   const [selectedQuote, setSelectedQuote] = useState("");
   const [selectedVersionId, setSelectedVersionId] = useState("");
   const [updateSourceId, setUpdateSourceId] = useState<string | null>(null);
-  const [replacing, setReplacing] = useState<Record<string, string> | null>(
-    null,
-  );
+  const [reviewSource, setReviewSource] = useState("");
+  const [replacing, setReplacing] = useState<CitationTarget | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const evidenceReturn = useRef<HTMLElement | null>(null);
   const [panelTab, setPanelTab] = useState("sources");
@@ -211,6 +220,8 @@ export default function Workspace({
   };
   useEffect(() => {
     setSelectedSource(null);
+    setReviewSource("");
+    setReplacing(null);
     setSelectedQuote("");
     setSelectedVersionId("");
     setEvidenceOpen(false);
@@ -219,6 +230,10 @@ export default function Workspace({
     setView(project.lastView || "findings");
   }, [project.id]);
   const notebook = notebookFor(project);
+  const reviewCount = useMemo(
+    () => projectReview(project).length,
+    [project.content, project.sources, project.notebook, project.comparison],
+  );
   const activeQuestion =
     notebook.questions.find((q) => q.id === questionId) ||
     notebook.questions[0];
@@ -411,13 +426,8 @@ export default function Workspace({
             : s,
         ),
       });
-      setView(
-        project.notebook
-          ? "findings"
-          : project.comparison
-            ? "comparison"
-            : "review",
-      );
+      setReviewSource(updateId);
+      setView("review");
       setSelectedSource(null);
       setReplacing(null);
       toast.success(
@@ -463,7 +473,10 @@ export default function Workspace({
     page: number,
     quote: string,
   ) => {
-    if (!version.text.includes(quote)) {
+    if (
+      !quote.trim() ||
+      !version.pages.some((p) => p.page === page && p.text.includes(quote))
+    ) {
       toast.error(t("引用原文校验失败", "Citation validation failed"));
       return;
     }
@@ -475,23 +488,8 @@ export default function Workspace({
       label: String(project.sources.indexOf(source) + 1),
     };
     if (replacing) {
-      const content = structuredClone(project.content);
-      let replaced = false;
-      const visit = (node: typeof content) => {
-        if (
-          !replaced &&
-          node.type === "citation" &&
-          node.attrs?.sourceId === replacing.sourceId &&
-          node.attrs?.versionId === replacing.versionId &&
-          node.attrs?.quote === replacing.quote
-        ) {
-          node.attrs = attrs;
-          replaced = true;
-        }
-        node.content?.forEach(visit);
-      };
-      visit(content);
-      if (!replaced) {
+      const content = replaceCitation(project.content, replacing, attrs);
+      if (!content) {
         toast.error(
           t(
             "原引用已改变，请重新选择",
@@ -907,11 +905,16 @@ export default function Workspace({
                 <Clock3 size={16} />
                 {t("版本记录", "Version history")}
               </button>
-              <button onClick={() => setView("review")}>
+              <button
+                onClick={() => {
+                  setReviewSource("");
+                  setView("review");
+                }}
+              >
                 <ShieldCheck size={16} />
-                {t("简报来源检查", "Brief source review")}
-                {countChanges(project) > 0 && (
-                  <span className="changes-count">{countChanges(project)}</span>
+                {t("研究复核", "Research review")}
+                {reviewCount > 0 && (
+                  <span className="changes-count">{reviewCount}</span>
                 )}
               </button>
             </nav>
@@ -1005,10 +1008,7 @@ export default function Workspace({
                     : t("保存失败，请备份", "Save failed. Export a backup.")}
               </strong>
               <span>
-                {t(
-                  "云备份由你选择开启",
-                  "Cloud backups, when you choose.",
-                )}
+                {t("云备份由你选择开启", "Cloud backups, when you choose.")}
               </span>
               {saving === "error" && (
                 <button
@@ -1150,6 +1150,7 @@ export default function Workspace({
               ["findings", t("研究", "Research")],
               ["library", t("资料", "Sources")],
               ["editor", t("简报", "Brief")],
+              ["delivery", t("交付", "Delivery")],
             ].map(([id, label]) => (
               <button
                 key={id}
@@ -1591,17 +1592,38 @@ export default function Workspace({
               onImport={() => setDialog("import")}
             />
           </div>
-        ) : view === "review" ? (
-          <ReviewView
+        ) : view === "delivery" ? (
+          <DeliveryView
+            key={project.id}
             project={project}
             language={data.language}
-            onReview={(attrs) => {
+            onChange={updateProject}
+            onReview={() => {
+              setReviewSource("");
+              setView("review");
+            }}
+          />
+        ) : view === "review" ? (
+          <ReviewView
+            key={project.id + reviewSource}
+            project={project}
+            language={data.language}
+            initialSource={reviewSource}
+            onChange={updateProject}
+            onBrief={() => setView("editor")}
+            onDelivery={() => setView("delivery")}
+            onReview={(target) => {
+              const attrs = target.attrs;
               const source = project.sources.find(
                 (s) => s.id === attrs.sourceId,
               );
               if (!source) return;
-              openSource(source, attrs.quote, source.versions.at(-1)!.id);
-              setReplacing(attrs);
+              openSource(
+                source,
+                String(attrs.quote || ""),
+                source.versions.at(-1)!.id,
+              );
+              setReplacing(target);
             }}
           />
         ) : (

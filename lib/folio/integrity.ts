@@ -11,12 +11,16 @@ export function citationStatus(
     !version ||
     typeof attrs.quote !== "string" ||
     !attrs.quote ||
-    !version.text.includes(attrs.quote)
+    !version.pages.some(
+      (p) => p.page === attrs.page && p.text.includes(attrs.quote as string),
+    )
   )
     return "missing";
   const latest = source.versions[source.versions.length - 1];
   if (latest.id === version.id) return "current";
-  return latest.text.includes(attrs.quote) ? "older" : "changed";
+  return latest.pages.some((p) => p.text.includes(attrs.quote as string))
+    ? "older"
+    : "changed";
 }
 export function collectCitations(node: JSONContent): JSONContent[] {
   return [
@@ -25,13 +29,27 @@ export function collectCitations(node: JSONContent): JSONContent[] {
   ];
 }
 export function countChanges(project: Project) {
-  return collectCitations(project.content).filter((c) =>
-    ["changed", "missing"].includes(citationStatus(c.attrs || {}, project)),
+  return collectCitations(project.content).filter(
+    (c) => citationStatus(c.attrs || {}, project) !== "current",
   ).length;
 }
 export function validateDocument(node: unknown, depth = 0): boolean {
   if (!node || typeof node !== "object" || depth > 30) return false;
   const n = node as JSONContent;
+  if (
+    n.marks !== undefined &&
+    (!Array.isArray(n.marks) ||
+      n.marks.length > 12 ||
+      n.marks.some(
+        (mark) =>
+          !mark ||
+          typeof mark !== "object" ||
+          !["bold", "italic", "strike", "code", "underline", "link"].includes(
+            mark.type,
+          ),
+      ))
+  )
+    return false;
   const types = [
     "doc",
     "paragraph",

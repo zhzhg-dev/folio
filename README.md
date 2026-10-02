@@ -1,5 +1,14 @@
 # Folio
 
+## New in 0.10
+
+- **Research review:** a separate queue spans findings across questions, the comparison and brief citations. Filter by source, scope and state; distinguish changed passages, newer unchanged versions, missing evidence and items not manually reviewed. Updating a source opens the affected queue. Review findings with **Save & next**.
+- **Traceable edits:** the last 30 edits made from Research review retain their previous finding and evidence. Brief citation replacement saves a document snapshot, checks the exact occurrence and refuses a stale selection. Original citations must match their stated page.
+- **Read-only delivery:** select the current brief or specific findings, optionally include personal notes, inspect the recipient preview and save a fixed edition. Export self-contained HTML or copy structured text with citations. Editions retain the original content, passages and preparation-time warnings; subsequent research changes do not rewrite them.
+- **Private by default:** delivery excludes original files, full source texts, conversation history and account data. Selected finding notes are excluded unless enabled; a brief includes all authored text. HTML has no scripts or external resources. Saved editions remain on the device and in project backups: up to 10 editions, 1 MiB each, 4 MiB total.
+
+Delivery is a file handoff, not a public link or revocable sharing service. The hosted audience remains owner-only. Preview drafts are not autosaved. Source checks are not verification of a conclusion. The existing embedded-browser native-download limitation remains; copied text is a tested alternative. English is the default; all new controls support Chinese.
+
 ## New in 0.9
 
 - **Optional account and cloud backups:** open My workspace → Account & cloud. The hosted Site uses ChatGPT sign-in; signing in never uploads your work automatically. Save a complete project version and restore a separate local copy on another device signed into the same account.

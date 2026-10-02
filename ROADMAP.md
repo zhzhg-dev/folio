@@ -1,6 +1,12 @@
 # Folio product priorities
 
-## Current direction — 0.9
+## Current direction — 0.10
+
+0.10 connects source-change impact review, manual revision and fixed read-only delivery. Review spans persisted findings, comparisons and brief citations. Delivery is a recipient preview and bounded immutable local editions, with HTML/text export and backup continuity. It does not publish a link or change the Site audience.
+
+Next product gates: validate hosted sign-in and multi-account access before any public rollout; decide whether revocable read-only links warrant a separate public distribution service; evaluate real bilingual documents against independently labeled outcomes. Keep costs optional, private work local by default, and the existing freeze investigation deferred at the owner's request. Public-user recruitment remains deferred.
+
+## 0.9 delivered: optional account and cloud backups
 
 The owner explicitly deferred the original freeze investigation and requested continued product development. This supersedes the older sequencing below. 0.9 adds optional ChatGPT identity on Sites, private per-account immutable cloud backups, complete validation, bounded quotas and restore-as-copy across devices. It retains local editing and has no automatic uploads, automatic merging, real-time sync or collaboration.
 

@@ -4,6 +4,8 @@ import { validComparison } from "./comparison.ts";
 import { validNotebook } from "./notebook.ts";
 import { hashBytes } from "./file-hash.ts";
 import { validateDocument } from "./integrity.ts";
+import { validDeliveries } from "./delivery.ts";
+import { validReviewHistory } from "./review.ts";
 export async function restoreBackup(file: File): Promise<Project> {
   if (file.size > 150 * 1024 * 1024)
     throw new Error("备份过大 / Backup too large");
@@ -20,6 +22,12 @@ export async function restoreBackup(file: File): Promise<Project> {
   )
     throw new Error("不是有效的 Folio 项目备份 / Invalid Folio backup");
   const p = data.project;
+  if (p.deliveries !== undefined && !validDeliveries(p.deliveries))
+    throw new Error(
+      "交付版本结构或大小无效 / Invalid delivery editions in backup",
+    );
+  if (p.reviewHistory !== undefined && !validReviewHistory(p.reviewHistory))
+    throw new Error("复核历史结构无效 / Invalid review history in backup");
   if (p.notebook !== undefined && !validNotebook(p.notebook))
     throw new Error("研究笔记结构无效 / Invalid research notebook in backup");
   if (

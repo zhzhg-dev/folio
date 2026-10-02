@@ -1,5 +1,16 @@
 # Folio verification
 
+## 0.10 research review and fixed delivery — 2026-10-03
+
+- Type checking, 117 automated tests and production build pass. Eleven new checks cover cross-question source impact without counting a legacy notebook projection twice, page-specific citation verification, exact duplicate replacement and stale-selection refusal, immutable editions, omission of private notes/unrelated sources, explicit unresolved citations, HTML injection, size limits, backup round trips and structured text tables.
+- Malformed document marks are rejected before restoration. The ordinary HTML export also clamps heading levels. Review source filters and pending citation replacements clear on project switches; a filter from another project cannot hide all its open work.
+- Browser with a fictional sample: Research review showed 14 open items across findings and comparison. Manually checked the annual price calculation and used Save & next; the queue dropped to 13, the next finding opened, and the previous finding remained in review history.
+- Prepared and saved an edition containing six findings and five cited passages. The preview exposed five findings still needing manual review. Copy text returned 1,689 characters with reference passages and the manual status, excluding the unchecked personal-note option. A reload retained the saved edition.
+- Exported the actual 15,740-character project backup through the copied-text path and restored a separate project. Its saved edition, three sources, notebook review mark and one review-history entry remained available. Production preview loaded the same local state. New delivery drafts group findings by question; switching into preview resets the content scroll to the title.
+- English and Chinese controls and 390px review/delivery layouts were inspected. At 390px the document width was 390px; a 1440px viewport also had no document overflow. The inspected application console contained no warnings or errors. Native HTML export produced the visible Save file / Save as controls; completion to disk in this embedded host remains unverified.
+- The compiled 16.26 KB Worker passed a D1/R2 round trip containing a saved delivery and review history, and rejected a delivery with malformed marks. The live database overview confirmed the existing cloud_backups table before this release; no schema migration was needed. These checks are not a live multi-person authentication test.
+- Delivery copies only the selected content and cited passages. It does not change hosted access, upload on its own, create a public URL, or make exported files revocable. Source checks are not semantic truth verification. Edition/history limits are documented; local/browser long-session behavior and the original freeze cause remain outside this release's claims.
+
 ## 0.9 optional account and cloud backups — 2026-10-03
 
 - Type checking, 106 automated tests and the production build pass. Eleven cloud tests use actual local D1/R2 bindings: anonymous rejection, per-owner list/read/delete isolation, account-change and cross-origin checks, byte-identical original/citation restoration, immutable idempotency, upload size and atomic count/byte quotas, corrupted-backup rejection, interrupted writes and recoverable deletion. An offline-worker test excludes API and authentication routes from interception.

@@ -57,6 +57,43 @@ try {
       content: { type: "doc", content: [] },
       sources: [],
       snapshots: [],
+      deliveries: [
+        {
+          id: "edition",
+          title: "Fixed result",
+          summary: "",
+          language: "en",
+          origin: "brief",
+          createdAt: new Date().toISOString(),
+          content: {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: "Read-only delivery" }],
+              },
+            ],
+          },
+          references: [],
+          checks: { missing: 0, updated: 0, unreviewed: 0 },
+        },
+      ],
+      reviewHistory: [
+        {
+          id: "edit",
+          title: "Previous finding",
+          scope: "findings",
+          createdAt: new Date().toISOString(),
+          before: {
+            id: "f",
+            questionId: "q",
+            value: "An earlier judgment",
+            kind: "judgment",
+            note: "",
+            evidence: [],
+          },
+        },
+      ],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     },
@@ -78,8 +115,20 @@ try {
   );
   assert.equal(get.status, 200);
   assert.deepEqual(await get.json(), backup);
+  const malformed = structuredClone(backup);
+  malformed.project.deliveries[0].content.content[0].content[0].marks = [{}];
+  const invalid = await worker.dispatchFetch(`${url}/api/cloud/backups`, {
+    method: "POST",
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+      "X-Folio-Upload-Id": randomUUID(),
+    },
+    body: JSON.stringify(malformed),
+  });
+  assert.equal(invalid.status, 400);
   console.log(
-    "Built Worker verified: fetch handler, asset delegation, anonymous rejection, D1/R2 backup round trip.",
+    "Built Worker verified: fetch handler, assets, anonymous rejection, D1/R2 delivery/history round trip and malformed-edition rejection.",
   );
 } finally {
   await worker.dispose();
