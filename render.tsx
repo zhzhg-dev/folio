@@ -9,6 +9,7 @@ import "./app/research.css";
 import "./app/comparison.css";
 import "./app/notebook.css";
 import "./app/cloud.css";
+import "./app/organization.css";
 
 class WorkspaceBoundary extends Component<
   { children: React.ReactNode; onFailure: () => void },

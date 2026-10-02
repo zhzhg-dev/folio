@@ -1,5 +1,11 @@
 # Folio product priorities
 
+## Current direction — 0.11
+
+Connect reading, collection, organization and retrieval before adding another top-level product area. Exact source passages become findings under a chosen question. A separate organizer provides reversible archives and ordering; global search spans active research with precise project-scoped navigation. Source revisions, notes and existing briefs survive organization. Core usage introduces no paid service.
+
+Next: improve import recovery and source-library organization, then evaluate retrieval against independently labeled bilingual research tasks. Keep automated merging, teams, billing, public sharing and OCR outside the current promise. Archive retention is bounded and has no permanent-purge interface. The original host-freeze investigation and public-user recruitment remain deferred at the owner's request.
+
 ## Current direction — 0.10
 
 0.10 connects source-change impact review, manual revision and fixed read-only delivery. Review spans persisted findings, comparisons and brief citations. Delivery is a recipient preview and bounded immutable local editions, with HTML/text export and backup continuity. It does not publish a link or change the Site audience.

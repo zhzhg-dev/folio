@@ -3,15 +3,32 @@ import type { Project, ResearchTurn } from "./model.ts";
 // Do not clone editor history, original files, or old revisions into the worker.
 export function researchInput(project: Project, ids: string[]): Project {
   return {
-    ...project,
+    id: project.id,
+    name: project.name,
+    reportTitle: "",
+    description: "",
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
     content: { type: "doc", content: [] },
     snapshots: [],
     research: undefined,
     comparison: undefined,
     sources: project.sources.map((s) => ({
-      ...s,
+      id: s.id,
+      name: s.name,
+      kind: s.kind,
+      color: s.color,
       versions: ids.includes(s.id)
-        ? s.versions.slice(-1).map(({ original, ...v }) => ({ ...v, text: "" }))
+        ? s.versions
+            .slice(-1)
+            .map((v) => ({
+              id: v.id,
+              pages: v.pages,
+              createdAt: v.createdAt,
+              hash: v.hash,
+              size: v.size,
+              text: "",
+            }))
         : [],
     })),
   };

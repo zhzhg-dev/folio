@@ -57,6 +57,32 @@ try {
       content: { type: "doc", content: [] },
       sources: [],
       snapshots: [],
+      notebook: {
+        objective: "Archived research round trip",
+        questions: [],
+        findings: [],
+        archived: [
+          {
+            id: "archive-q",
+            kind: "question",
+            archivedAt: new Date().toISOString(),
+            question: {
+              id: "question-archive",
+              title: "A question to revisit",
+            },
+            findings: [
+              {
+                id: "archived-finding",
+                questionId: "question-archive",
+                value: "Earlier judgment",
+                kind: "judgment",
+                note: "Keep this note",
+                evidence: [],
+              },
+            ],
+          },
+        ],
+      },
       deliveries: [
         {
           id: "edition",
@@ -128,7 +154,7 @@ try {
   });
   assert.equal(invalid.status, 400);
   console.log(
-    "Built Worker verified: fetch handler, assets, anonymous rejection, D1/R2 delivery/history round trip and malformed-edition rejection.",
+    "Built Worker verified: fetch handler, assets, anonymous rejection, D1/R2 archive/delivery/history round trip and malformed-edition rejection.",
   );
 } finally {
   await worker.dispose();

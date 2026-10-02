@@ -87,6 +87,13 @@ import {
 import SourceDetail from "./source-detail";
 import Assistant from "./assistant";
 import ResearchNotebook from "./research-notebook";
+import CaptureFinding from "./capture-finding";
+import NotebookOrganizer from "./notebook-organizer";
+import WorkspaceSearch from "./workspace-search";
+import {
+  searchTargetExists,
+  type SearchHit,
+} from "@/lib/folio/workspace-search";
 import {
   emptyNotebook,
   notebookExample,
@@ -188,7 +195,17 @@ export default function Workspace({
   const dialogKind = dialog || dialogRef.current;
   const [newName, setNewName] = useState("");
   const [newTemplate, setNewTemplate] = useState("research");
-  const [query, setQuery] = useState("");
+  const [pendingNavigation, setPendingNavigation] = useState<SearchHit | null>(
+    null,
+  );
+  const [findingFocus, setFindingFocus] = useState<{
+    id: string;
+    nonce: number;
+  } | null>(null);
+  const [capturing, setCapturing] = useState<{
+    projectId: string;
+    evidence: Evidence;
+  } | null>(null);
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
   const [selectedQuote, setSelectedQuote] = useState("");
   const [selectedVersionId, setSelectedVersionId] = useState("");
@@ -197,6 +214,19 @@ export default function Workspace({
   const [replacing, setReplacing] = useState<CitationTarget | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const evidenceReturn = useRef<HTMLElement | null>(null);
+  const findingReturn = useRef("");
+  const restoreFindingFocus = () => {
+    const id = findingReturn.current;
+    if (!id) return false;
+    const row = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-finding-id]"),
+    ).find((node) => node.dataset.findingId === id);
+    row
+      ?.querySelector<HTMLButtonElement>("button")
+      ?.focus({ preventScroll: true });
+    findingReturn.current = "";
+    return !!row;
+  };
   const [panelTab, setPanelTab] = useState("sources");
   const [undoInsertion, setUndoInsertion] = useState<{
     projectId: string;
@@ -215,6 +245,7 @@ export default function Workspace({
   const viewProjectId = useRef(project.id);
   useEffect(startDiagnostics, []);
   const selectProject = (id: string) => {
+    setPendingNavigation(null);
     setData((d) => openProject(d, id));
     setDialog(null);
   };
@@ -227,6 +258,8 @@ export default function Workspace({
     setEvidenceOpen(false);
     setRightOpen(false);
     setQuestionId("");
+    setCapturing(null);
+    setFindingFocus(null);
     setView(project.lastView || "findings");
   }, [project.id]);
   const notebook = notebookFor(project);
@@ -357,6 +390,59 @@ export default function Workspace({
     });
     setEvidenceOpen(true);
   };
+  const beginCapture = (
+    source: Source,
+    version: SourceVersion,
+    page: number,
+    quote: string,
+  ) => {
+    setCapturing({
+      projectId: project.id,
+      evidence: {
+        id: uid(),
+        sourceId: source.id,
+        versionId: version.id,
+        page,
+        quote,
+        name: source.name.slice(0, 1000),
+        label: String(project.sources.findIndex((s) => s.id === source.id) + 1),
+      },
+    });
+  };
+  const openFinding = (id: string, findingId?: string) => {
+    findingReturn.current = findingId || "";
+    setQuestionId(id);
+    setView("findings");
+    setDialog(null);
+    if (findingId) setFindingFocus({ id: findingId, nonce: Date.now() });
+  };
+  // Apply the target after the project's reset effect, including cross-project searches.
+  useEffect(() => {
+    const hit = pendingNavigation;
+    if (!hit || hit.projectId !== project.id) return;
+    setPendingNavigation(null);
+    if (!searchTargetExists(project, hit)) {
+      toast.error(
+        t("内容已改变，请重新搜索。", "This content changed. Search again."),
+      );
+      return;
+    }
+    if (hit.kind === "source") {
+      const source = project.sources.find((s) => s.id === hit.sourceId)!;
+      setView("library");
+      inspectEvidence({
+        id: uid(),
+        name: source.name,
+        label: String(project.sources.indexOf(source) + 1),
+        sourceId: source.id,
+        versionId: hit.versionId!,
+        page: hit.page!,
+        quote: hit.quote || "",
+      });
+    } else if (hit.kind === "finding" || hit.kind === "question") {
+      openFinding(hit.questionId!, hit.kind === "finding" ? hit.id : undefined);
+    } else setView(hit.kind === "brief" ? "editor" : "findings");
+  }, [pendingNavigation, project.id]);
   useEffect(() => {
     if (viewProjectId.current !== project.id) {
       viewProjectId.current = project.id;
@@ -665,7 +751,11 @@ export default function Workspace({
         project.reportTitle === "Untitled research"
           ? objective
           : project.reportTitle,
-      notebook: { objective, questions: [question], findings: [] },
+      notebook: {
+        ...notebook,
+        objective,
+        questions: [...notebook.questions, question],
+      },
     });
     setQuestionId(question.id);
   };
@@ -897,6 +987,10 @@ export default function Workspace({
               <ChevronDown size={13} />
             </summary>
             <nav className="main-nav" aria-label={t("更多工具", "More tools")}>
+              <button onClick={() => setDialog("organize")}>
+                <FolderOpen size={16} />
+                {t("整理研究", "Organize research")}
+              </button>
               <button onClick={() => setView("comparison")}>
                 <Columns3 size={16} />
                 {t("方案比较", "Compare options")}
@@ -1182,6 +1276,8 @@ export default function Workspace({
         </nav>
         {view === "findings" ? (
           <ResearchNotebook
+            onOrganize={() => setDialog("organize")}
+            focusFinding={findingFocus}
             key={project.id}
             project={project}
             language={data.language}
@@ -1384,6 +1480,7 @@ export default function Workspace({
                       {selectedSource ? (
                         <>
                           <SourceDetail
+                            onCapture={beginCapture}
                             key={selectedSource.id + selectedVersionId}
                             source={
                               project.sources.find(
@@ -1670,7 +1767,17 @@ export default function Workspace({
                   <button
                     className="library-row"
                     key={s.id}
-                    onClick={() => openSource(s)}
+                    onClick={() =>
+                      inspectEvidence({
+                        id: uid(),
+                        sourceId: s.id,
+                        versionId: s.versions.at(-1)!.id,
+                        page: s.versions.at(-1)!.pages[0]?.page || 1,
+                        quote: "",
+                        name: s.name,
+                        label: String(project.sources.indexOf(s) + 1),
+                      })
+                    }
                   >
                     <div className={`source-file-icon ${s.color}`}>
                       <FileText size={20} />
@@ -1759,7 +1866,10 @@ export default function Workspace({
         }}
       >
         <DialogContent
-          className={`folio-dialog ${dialogKind === "projects" ? "project-manager-dialog" : ""}`}
+          className={`folio-dialog ${dialogKind === "projects" ? "project-manager-dialog" : ""} ${["search", "organize"].includes(dialogKind || "") ? "research-tools-dialog" : ""}`}
+          onCloseAutoFocus={(event) => {
+            if (restoreFindingFocus()) event.preventDefault();
+          }}
         >
           <DialogHeader>
             <DialogTitle>
@@ -1769,15 +1879,17 @@ export default function Workspace({
                   ? t("添加研究问题", "Add a research question")
                   : dialogKind === "new"
                     ? t("开始一个新项目", "Start a new project")
-                    : dialogKind === "search"
-                      ? t("找到你的思路", "Find your thoughts")
-                      : dialogKind === "settings"
-                        ? t("工作空间设置", "Workspace settings")
-                        : dialogKind === "document"
-                          ? t("文档信息", "Document details")
-                          : dialogKind === "snapshot"
-                            ? t("保存文档版本", "Save document version")
-                            : t("添加到工作空间", "Add to your workspace")}
+                    : dialogKind === "organize"
+                      ? t("整理研究", "Organize research")
+                      : dialogKind === "search"
+                        ? t("找到你的思路", "Find your thoughts")
+                        : dialogKind === "settings"
+                          ? t("工作空间设置", "Workspace settings")
+                          : dialogKind === "document"
+                            ? t("文档信息", "Document details")
+                            : dialogKind === "snapshot"
+                              ? t("保存文档版本", "Save document version")
+                              : t("添加到工作空间", "Add to your workspace")}
             </DialogTitle>
             <DialogDescription>
               {t(
@@ -1796,6 +1908,13 @@ export default function Workspace({
                 setData((d) => changeProject(d, id, action, name))
               }
               onNew={() => setDialog("new")}
+            />
+          ) : dialogKind === "organize" ? (
+            <NotebookOrganizer
+              project={project}
+              language={data.language}
+              onChange={(notebook) => updateProject({ notebook })}
+              onOpen={openFinding}
             />
           ) : ["import", "snapshot", "settings"].includes(dialogKind || "") ? (
             <FeatureDialog
@@ -1928,89 +2047,15 @@ export default function Workspace({
               </button>
             </form>
           ) : dialogKind === "search" ? (
-            <>
-              <input
-                autoFocus
-                className="field-input"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t(
-                  "搜索项目或资料…",
-                  "Search projects or sources…",
-                )}
-              />
-              <div className="search-results">
-                {activeProjects
-                  .filter((p) =>
-                    `${p.name}${p.reportTitle}`
-                      .toLowerCase()
-                      .includes(query.toLowerCase()),
-                  )
-                  .map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => {
-                        setData((d) => openProject(d, p.id));
-                        setDialog(null);
-                        setView("editor");
-                      }}
-                    >
-                      <FileText size={18} />
-                      <span>
-                        {p.reportTitle}
-                        <small>{p.name}</small>
-                      </span>
-                      <ArrowUpRight size={16} />
-                    </button>
-                  ))}
-                {activeProjects.flatMap((p) =>
-                  p.sources
-                    .filter(
-                      (s) =>
-                        query.trim() &&
-                        (s.name + s.versions.at(-1)?.text)
-                          .toLowerCase()
-                          .includes(query.toLowerCase()),
-                    )
-                    .map((s) => (
-                      <button
-                        key={p.id + s.id}
-                        onClick={() => {
-                          setData((d) => ({ ...d, activeId: p.id }));
-                          openSource(s);
-                          setDialog(null);
-                        }}
-                      >
-                        <FolderOpen size={18} />
-                        <span>
-                          {s.name}
-                          <small>{p.name}</small>
-                        </span>
-                        <ArrowUpRight size={16} />
-                      </button>
-                    )),
-                )}
-                {query.trim() &&
-                  !activeProjects.some(
-                    (p) =>
-                      (p.name + p.reportTitle)
-                        .toLowerCase()
-                        .includes(query.toLowerCase()) ||
-                      p.sources.some((s) =>
-                        (s.name + s.versions.at(-1)?.text)
-                          .toLowerCase()
-                          .includes(query.toLowerCase()),
-                      ),
-                  ) && (
-                    <p className="small-copy">
-                      {t(
-                        "没有找到匹配的项目或资料",
-                        "No matching projects or sources",
-                      )}
-                    </p>
-                  )}
-              </div>
-            </>
+            <WorkspaceSearch
+              projects={data.projects}
+              language={data.language}
+              onOpen={(hit) => {
+                setPendingNavigation(hit);
+                setData((d) => openProject(d, hit.projectId));
+                setDialog(null);
+              }}
+            />
           ) : dialogKind === "settings" ? (
             <div className="settings-body">
               <div className="setting-row">
@@ -2066,15 +2111,16 @@ export default function Workspace({
           className="evidence-dialog"
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            evidenceReturn.current?.focus({ preventScroll: true });
+            if (!restoreFindingFocus())
+              evidenceReturn.current?.focus({ preventScroll: true });
           }}
         >
           <DialogHeader>
-            <DialogTitle>{t("核对证据", "Verify the evidence")}</DialogTitle>
+            <DialogTitle>{t("阅读原文", "Read the source")}</DialogTitle>
             <DialogDescription>
               {t(
-                "阅读回答所引用的原始资料版本。",
-                "Read the exact source revision cited in the response.",
+                "阅读资料原文，保留摘录或核对引用。",
+                "Keep a useful passage or check a citation against its original revision.",
               )}
             </DialogDescription>
           </DialogHeader>
@@ -2082,6 +2128,7 @@ export default function Workspace({
             project.sources.find((s) => s.id === project.reading!.sourceId) && (
               <div className="evidence-reader-body">
                 <SourceDetail
+                  onCapture={beginCapture}
                   key={
                     project.reading.sourceId +
                     project.reading.versionId +
@@ -2124,6 +2171,29 @@ export default function Workspace({
             )}
         </DialogContent>
       </Dialog>
+      {capturing?.projectId === project.id && (
+        <CaptureFinding
+          project={project}
+          language={data.language}
+          evidence={capturing.evidence}
+          initialQuestionId={activeQuestion?.id || ""}
+          onClose={() => setCapturing(null)}
+          onSave={(notebook, finding, open) => {
+            updateProject({ notebook });
+            setCapturing(null);
+            toast.success(
+              t(
+                "已保存发现，出处与版本已保留。",
+                "Finding saved with its source revision.",
+              ),
+            );
+            if (open) {
+              setEvidenceOpen(false);
+              openFinding(finding.questionId, finding.id);
+            }
+          }}
+        />
+      )}
       <Toaster position="bottom-right" richColors closeButton />
     </SidebarProvider>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -42,6 +42,8 @@ type Props = {
   onAdd: (finding: Finding) => void;
   onBrief: () => void;
   onAsk: (question: string) => void;
+  onOrganize: () => void;
+  focusFinding?: { id: string; nonce: number } | null;
 };
 export default function ResearchNotebook({
   project,
@@ -55,6 +57,8 @@ export default function ResearchNotebook({
   onAdd,
   onBrief,
   onAsk,
+  onOrganize,
+  focusFinding,
 }: Props) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
   const notebook = notebookFor(project);
@@ -69,11 +73,21 @@ export default function ResearchNotebook({
   const [editing, setEditing] = useState<Finding | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [questionTitle, setQuestionTitle] = useState("");
+  const focused = useRef<HTMLElement | null>(null);
   useEffect(() => {
     setExpanded(null);
     setEditing(null);
     setRenaming(false);
   }, [question?.id]);
+  useEffect(() => {
+    if (focusFinding && findings.some((f) => f.id === focusFinding.id)) {
+      setExpanded(focusFinding.id);
+      focused.current?.scrollIntoView({ block: "center" });
+      focused.current
+        ?.querySelector<HTMLButtonElement>("button")
+        ?.focus({ preventScroll: true });
+    }
+  }, [focusFinding, question?.id]);
   const active = expanded === null ? findings[0]?.id : expanded;
   const update = (finding: Finding) =>
     onChange({
@@ -91,6 +105,11 @@ export default function ResearchNotebook({
   if (!notebook.questions.length)
     return (
       <section className="research-welcome">
+        {!!notebook.archived?.length && (
+          <button className="quiet-link" onClick={onOrganize}>
+            {t("查看归档研究", "View archived research")}
+          </button>
+        )}
         <div className="welcome-symbol">
           <Leaf size={25} strokeWidth={1.4} />
         </div>
@@ -236,6 +255,9 @@ export default function ResearchNotebook({
           <p className="notebook-context">{notebook.objective}</p>
         )}
         <div className="notebook-counts">
+          <button className="quiet-link notebook-organize" onClick={onOrganize}>
+            {t("整理研究", "Organize research")}
+          </button>
           <span>
             {findings.length}{" "}
             {t("条发现", findings.length === 1 ? "finding" : "findings")}
@@ -310,6 +332,10 @@ export default function ResearchNotebook({
             <article
               className={`finding-row ${open ? "is-open" : ""}`}
               key={finding.id}
+              data-finding-id={finding.id}
+              ref={(node) => {
+                if (focusFinding?.id === finding.id) focused.current = node;
+              }}
             >
               <button
                 className="finding-summary"

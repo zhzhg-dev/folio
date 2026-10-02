@@ -1,5 +1,13 @@
 # Folio
 
+## New in 0.11
+
+- **Read and collect:** source files open in a dedicated reader. Keep an exact passage as a finding under an existing or new question, add your interpretation and note, then continue reading or open the finding. Original page and revision stay attached; saving never implies human review or changes your brief.
+- **Organize research:** reorder questions and findings, move a finding between questions, or archive a question with its findings. Restore an entire question or place an archived finding under an active question. Moving and restoring require a fresh review. Archives retain evidence and notes in local and cloud project backups.
+- **Find your work:** search across active projects, questions, findings, personal notes, current source pages and briefs. Filter by project and content type, open a finding directly or jump to its source page. Search runs in an on-demand worker and stops when closed; there are no new API costs.
+
+Search matches words and phrases, not semantic or translated meaning. It excludes archived work and old source revisions, accepts up to 8 million text characters / 20,000 records, and shows the first 60 results. Larger workspaces can select a smaller project. Active research allows 30 questions / 200 findings; archives hold at most 200 entries and 200 findings. Archive is reversible; permanent archive deletion is not included. Existing comparison and brief snapshots stay independent. The hosted audience remains owner-only.
+
 ## New in 0.10
 
 - **Research review:** a separate queue spans findings across questions, the comparison and brief citations. Filter by source, scope and state; distinguish changed passages, newer unchanged versions, missing evidence and items not manually reviewed. Updating a source opens the affected queue. Review findings with **Save & next**.
@@ -36,7 +44,7 @@ A local-first research workspace for comparing options and writing evidence-back
 
 Folio opens in English. Switch between **English / 中文** in the top bar on desktop and mobile; your preference is remembered. Changing the interface language never translates or overwrites your writing.
 
-> **0.9 working preview.** Questions, findings, source evidence and briefs share one research workflow. Optional cloud backups are available on Sites. On-device AI is experimental; automatic sync, collaboration, and OCR are not implemented.
+> **0.11 working preview.** Questions, findings, source evidence and briefs share one research workflow. Optional cloud backups are available on Sites. On-device AI is experimental; automatic sync, collaboration, and OCR are not implemented.
 
 ## New in 0.7
 

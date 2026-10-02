@@ -238,6 +238,54 @@ export function validNotebook(value: unknown): value is Notebook {
     return false;
   if (new Set(n.findings.map((f) => f?.id)).size !== n.findings.length)
     return false;
+  if (n.archived !== undefined) {
+    if (
+      !Array.isArray(n.archived) ||
+      n.archived.length > 200 ||
+      n.archived.reduce(
+        (sum, entry) =>
+          sum + (Array.isArray(entry?.findings) ? entry.findings.length : 201),
+        0,
+      ) > 200
+    )
+      return false;
+    if (
+      !n.archived.every(
+        (entry) =>
+          entry &&
+          str(entry.id, 200) &&
+          entry.id &&
+          ["question", "finding"].includes(entry.kind) &&
+          str(entry.archivedAt, 100) &&
+          Number.isFinite(Date.parse(entry.archivedAt)) &&
+          entry.question &&
+          Array.isArray(entry.findings) &&
+          (entry.kind !== "finding" || entry.findings.length === 1) &&
+          validNotebook({
+            objective: "",
+            questions: [entry.question],
+            findings: entry.findings,
+          }),
+      )
+    )
+      return false;
+    const ids = [
+      ...n.findings,
+      ...n.archived.flatMap((entry) => entry.findings),
+    ].map((f) => f?.id);
+    const questions = [
+      ...n.questions,
+      ...n.archived
+        .filter((entry) => entry.kind === "question")
+        .map((entry) => entry.question),
+    ].map((q) => q.id);
+    if (
+      new Set(ids).size !== ids.length ||
+      new Set(questions).size !== questions.length ||
+      new Set(n.archived.map((entry) => entry.id)).size !== n.archived.length
+    )
+      return false;
+  }
   return n.findings.every(
     (f) =>
       f &&

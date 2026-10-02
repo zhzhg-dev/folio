@@ -9,6 +9,7 @@ import {
   Download,
   AlertCircle,
   Maximize2,
+  BookmarkPlus,
 } from "lucide-react";
 import {
   Select,
@@ -41,6 +42,7 @@ export default function SourceDetail({
   onBack,
   onUpdate,
   onCite,
+  onCapture,
   initialPage = 1,
   onPosition,
   expanded = false,
@@ -53,6 +55,12 @@ export default function SourceDetail({
   onBack: () => void;
   onUpdate: () => void;
   onCite: (
+    source: Source,
+    version: SourceVersion,
+    page: number,
+    quote: string,
+  ) => void;
+  onCapture?: (
     source: Source,
     version: SourceVersion,
     page: number,
@@ -269,13 +277,25 @@ export default function SourceDetail({
                     p
                   )}
                 </p>
-                <button
-                  title={t("引用到正文", "Cite in document")}
-                  onClick={() => onCite(source, version, current.page, p)}
-                >
-                  <Plus size={12} />
-                  {t("引用", "Cite")}
-                </button>
+                <div className="source-passage-actions">
+                  {onCapture && (
+                    <button
+                      onClick={() =>
+                        onCapture(source, version, current.page, p)
+                      }
+                    >
+                      <BookmarkPlus size={14} />
+                      {t("保存发现", "Keep finding")}
+                    </button>
+                  )}
+                  <button
+                    title={t("引用到正文", "Cite in document")}
+                    onClick={() => onCite(source, version, current.page, p)}
+                  >
+                    <Plus size={12} />
+                    {t("引用", "Cite")}
+                  </button>
+                </div>
               </div>
             );
           })}

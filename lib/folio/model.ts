@@ -114,6 +114,14 @@ export type Notebook = {
   objective: string;
   questions: { id: string; title: string }[];
   findings: Finding[];
+  archived?: NotebookArchiveItem[];
+};
+export type NotebookArchiveItem = {
+  id: string;
+  kind: "question" | "finding";
+  archivedAt: string;
+  question: Notebook["questions"][number];
+  findings: Finding[];
 };
 export type WorkspaceData = {
   schemaVersion: 1;

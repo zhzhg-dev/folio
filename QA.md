@@ -1,5 +1,13 @@
 # Folio verification
 
+## 0.11 reading, organization and global search — 2026-10-03
+
+- Type checking and all 127 automated tests pass. Ten new tests cover exact historical capture, duplicate rejection, malformed metadata, move/reorder review behavior, reversible parent/child archives, capacity failures without mutation, archive backup round trips, legacy comparison independence, worker payload exclusions, bilingual search, scoped latest-page results, stale targets and bounded search.
+- Production client/server build passes. The compiled Worker accepts and returns a complete backup containing archived research, deliveries and review history through D1/R2; malformed editions remain rejected. No database migration or paid API was introduced.
+- Browser checks use clearly fictional local samples. Saving an excerpt can create a question, retain a personal note, continue at the same passage and restore keyboard focus. Historical capture opens the target finding with its old revision and a source-update warning. Moving, archiving the finding and its parent, refreshing, and restoring both retain their content. Cross-project note search opens the correct question and expands the matching finding.
+- Search is lexical, not a new semantic-retrieval benchmark. Its corpus is bounded to 8 million text characters / 20,000 records and results to 60. Archives are bounded to 200 entries and 200 findings. Full workspace loading and the original host-freeze root cause remain outside this release; browser download interoperability remains an existing limitation.
+- Additional browser checks pass: scoped search opens a PDF in another project at page 2 with the matching passage marked; archiving the last question, starting a new question and restoring the original preserves both; question ordering updates the sidebar. Chinese capture and organization dialogs at 390 × 844 have no horizontal overflow. Temporary viewport overrides were reset.
+
 ## 0.10 research review and fixed delivery — 2026-10-03
 
 - Type checking, 117 automated tests and production build pass. Eleven new checks cover cross-question source impact without counting a legacy notebook projection twice, page-specific citation verification, exact duplicate replacement and stale-selection refusal, immutable editions, omission of private notes/unrelated sources, explicit unresolved citations, HTML injection, size limits, backup round trips and structured text tables.
