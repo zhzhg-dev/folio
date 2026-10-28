@@ -77,6 +77,15 @@ import { loadWorkspace, saveWorkspace } from "@/lib/folio/storage";
 import { createAutosave } from "@/lib/folio/autosave";
 import { startDiagnostics } from "@/lib/folio/diagnostics";
 import DocumentEditor from "./document-editor";
+import BriefLinks from "./brief-links";
+import {
+  insertLinkedFinding,
+  insertLinkedComparison,
+} from "@/lib/folio/linked-brief";
+import {
+  applyConclusionChanges,
+  connectComparisonFindings,
+} from "@/lib/folio/conclusions";
 import FeatureDialog from "./feature-dialog";
 import ProjectManager from "./project-manager";
 import {
@@ -98,7 +107,6 @@ import {
   emptyNotebook,
   notebookExample,
   notebookFor,
-  findingNodes,
   findingsFromDraft,
   notebookLimits,
 } from "@/lib/folio/notebook";
@@ -111,11 +119,7 @@ import {
   type CitationTarget,
 } from "@/lib/folio/review";
 import ComparisonView from "./comparison-view";
-import {
-  emptyComparison,
-  comparisonBrief,
-  comparisonProgress,
-} from "@/lib/folio/comparison";
+import { emptyComparison, comparisonProgress } from "@/lib/folio/comparison";
 import {
   exportMarkdown,
   exportWord,
@@ -176,6 +180,8 @@ export default function Workspace({
   onFailure,
 }: { onReady?: () => void; onFailure?: () => void } = {}) {
   const [data, setData] = useState<WorkspaceData>(seedWorkspace);
+  const dataRef = useRef(data);
+  dataRef.current = data;
   const [loaded, setLoaded] = useState(false);
   const [exporting, setExporting] = useState(false);
   const exportLock = useRef(false);
@@ -234,6 +240,7 @@ export default function Workspace({
     after: Project["content"];
   } | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
+  const [briefFocusId, setBriefFocusId] = useState<string | null>(null);
   const autosave = useRef<ReturnType<
     typeof createAutosave<WorkspaceData>
   > | null>(null);
@@ -275,6 +282,27 @@ export default function Workspace({
     [data.language],
   );
   const onReady = useCallback((e: Editor) => setEditor(e), []);
+  useEffect(() => {
+    if (!briefFocusId || view !== "editor" || !editor || editor.isDestroyed)
+      return;
+    let position: number | undefined;
+    editor.state.doc.descendants((node, pos) => {
+      if (
+        node.type.name === "conclusionBlock" &&
+        node.attrs.id === briefFocusId
+      )
+        position = pos;
+    });
+    if (position !== undefined) {
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(position + 2)
+        .scrollIntoView()
+        .run();
+      setBriefFocusId(null);
+    }
+  }, [briefFocusId, view, editor, project.content]);
   const changeLanguage = useCallback((language: Language) => {
     setData((current) => ({
       ...current,
@@ -358,16 +386,43 @@ export default function Workspace({
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
   }, []);
-  const updateProject = useCallback((changes: Partial<Project>) => {
-    setData((current) => ({
-      ...current,
-      projects: current.projects.map((p) =>
-        p.id === current.activeId
-          ? { ...p, ...changes, updatedAt: new Date().toISOString() }
-          : p,
-      ),
-    }));
-  }, []);
+  const updateProject = useCallback(
+    (changes: Partial<Project>) => {
+      const targetId = project.id;
+      const target = dataRef.current.projects.find((p) => p.id === targetId);
+      if (!target) return false;
+      try {
+        // Report validation errors synchronously so editors can retain a draft.
+        applyConclusionChanges(target, changes);
+      } catch (error) {
+        toast.error(errorMessage(error, languageRef.current));
+        return false;
+      }
+      setData((current) => {
+        try {
+          return {
+            ...current,
+            projects: current.projects.map((p) =>
+              p.id === targetId
+                ? {
+                    ...applyConclusionChanges(p, changes),
+                    updatedAt: new Date().toISOString(),
+                  }
+                : p,
+            ),
+          };
+        } catch (error) {
+          // A failed relationship edit must leave the whole project unchanged.
+          queueMicrotask(() =>
+            toast.error(errorMessage(error, languageRef.current)),
+          );
+          return current;
+        }
+      });
+      return true;
+    },
+    [project.id],
+  );
   const saveReading = (reading: ReadingPosition) => updateProject({ reading });
   const updateResearch = (research: ResearchState) => {
     const id = project.id;
@@ -674,7 +729,8 @@ export default function Workspace({
   useWebMCP(project, activeProjects, selectProject);
   const headings =
     project.content.content
-      ?.filter((n) => n.type === "heading")
+      ?.flatMap((n) => (n.type === "conclusionBlock" ? n.content || [] : [n]))
+      .filter((n) => n.type === "heading")
       .map((n) => plainText(n)) || [];
   const documentText = plainText(project.content).replace(/\[\d+\]/g, "");
   const isChineseDocument =
@@ -688,7 +744,10 @@ export default function Workspace({
     if (!newName.trim()) return;
     const next = makeProject(newName.trim(), data.language);
     if (newTemplate === "comparison") {
-      next.comparison = emptyComparison(data.language);
+      next.comparison = {
+        ...emptyComparison(data.language),
+        findingsLinked: true,
+      };
       next.lastView = "comparison";
     } else {
       next.notebook = emptyNotebook();
@@ -718,12 +777,20 @@ export default function Workspace({
   };
   const buildComparisonBrief = () => {
     try {
-      const nodes = comparisonBrief(project, data.language);
+      const result = insertLinkedComparison(project, data.language);
+      if (!result.inserted) {
+        setView("editor");
+        setBriefFocusId(result.blockId);
+        toast.info(
+          t(
+            "比较已在简报中，可预览并更新。",
+            "This comparison is already in the brief. Review it for updates.",
+          ),
+        );
+        return;
+      }
       const before = structuredClone(project.content);
-      const after = {
-        ...before,
-        content: [...(before.content || []), ...nodes],
-      };
+      const after = result.content;
       updateProject({
         content: after,
         snapshots: [
@@ -733,10 +800,11 @@ export default function Workspace({
       });
       setUndoInsertion({ projectId: project.id, before, after });
       setView("editor");
+      setBriefFocusId(result.blockId);
       toast.success(
         t(
-          "简报已写入。请检查建议和待确认事项。",
-          "Brief added. Review the recommendation and open questions.",
+          "已写入关联简报。比较变化后会提示你确认更新。",
+          "Linked brief added. Changes to the comparison will be ready for your review.",
         ),
       );
     } catch (error) {
@@ -761,13 +829,27 @@ export default function Workspace({
   };
   const addFindingToBrief = (finding: Finding) => {
     try {
-      const nodes = findingNodes(finding, project, data.language);
+      const connected = project.notebook
+        ? project
+        : connectComparisonFindings(project);
+      const result = insertLinkedFinding(connected, finding.id, data.language);
+      if (!result.inserted) {
+        setView("editor");
+        setBriefFocusId(result.blockId);
+        toast.info(
+          t(
+            "此结论已在简报中，可预览并更新。",
+            "This conclusion is already in the brief. Review it for updates.",
+          ),
+        );
+        return;
+      }
       const before = structuredClone(project.content);
-      const after = {
-        ...before,
-        content: [...(before.content || []), ...nodes],
-      };
+      const after = result.content;
       updateProject({
+        ...(connected !== project
+          ? { notebook: connected.notebook, comparison: connected.comparison }
+          : {}),
         content: after,
         snapshots: [
           snapshot(t("加入发现之前", "Before adding a finding")),
@@ -775,10 +857,12 @@ export default function Workspace({
         ],
       });
       setUndoInsertion({ projectId: project.id, before, after });
+      setView("editor");
+      setBriefFocusId(result.blockId);
       toast.success(
         t(
-          "已加入简报，包含引用、备注和核对状态。",
-          "Added to brief with citations, note and review status.",
+          "结论已关联到简报，后续修改可预览并更新。",
+          "Conclusion linked to the brief. Future changes can be reviewed before updating.",
         ),
         {
           action: {
@@ -790,6 +874,57 @@ export default function Workspace({
     } catch (error) {
       toast.error(errorMessage(error, data.language));
     }
+  };
+  const connectComparison = () => {
+    try {
+      const connected = connectComparisonFindings(project);
+      updateProject({
+        notebook: connected.notebook,
+        comparison: connected.comparison,
+      });
+      toast.success(
+        t(
+          "比较与研究发现已关联。",
+          "Comparison connected to research findings.",
+        ),
+      );
+    } catch (error) {
+      toast.error(errorMessage(error, data.language));
+    }
+  };
+  const updateComparison = (comparison: NonNullable<Project["comparison"]>) => {
+    try {
+      if (!project.comparison) {
+        const next = connectComparisonFindings({ ...project, comparison });
+        return updateProject({
+          notebook: next.notebook,
+          comparison: next.comparison,
+        });
+      } else {
+        return updateProject({ comparison });
+      }
+    } catch (error) {
+      toast.error(errorMessage(error, data.language));
+      return false;
+    }
+  };
+  const changeLinkedBrief = (content: Project["content"], title: string) => {
+    const before = structuredClone(project.content);
+    updateProject({
+      content,
+      snapshots: [snapshot(title), ...project.snapshots],
+    });
+    setUndoInsertion({ projectId: project.id, before, after: content });
+  };
+  const openLinkedFinding = (id: string) => {
+    const finding = notebook.findings.find((f) => f.id === id);
+    if (!finding) {
+      setDialog("organize");
+      return;
+    }
+    setQuestionId(finding.questionId);
+    setFindingFocus({ id, nonce: Date.now() });
+    setView("findings");
   };
   const keepDraft = (draft: Draft): boolean => {
     if (!activeQuestion) {
@@ -1299,7 +1434,9 @@ export default function Workspace({
             key={project.id}
             project={project}
             language={data.language}
-            onChange={(comparison) => updateProject({ comparison })}
+            onChange={updateComparison}
+            onConnect={connectComparison}
+            onOpenFinding={openLinkedFinding}
             onImport={() => {
               setUpdateSourceId(null);
               setDialog("import");
@@ -1447,6 +1584,13 @@ export default function Workspace({
                     </span>
                   </div>
                   <div className="paper-divider" />
+                  <BriefLinks
+                    project={project}
+                    language={data.language}
+                    onContent={changeLinkedBrief}
+                    onOpenFinding={openLinkedFinding}
+                    onOpenComparison={() => setView("comparison")}
+                  />
                   <DocumentEditor
                     key={project.id + data.language}
                     content={project.content}
@@ -1707,7 +1851,10 @@ export default function Workspace({
             language={data.language}
             initialSource={reviewSource}
             onChange={updateProject}
-            onBrief={() => setView("editor")}
+            onBrief={(blockId) => {
+              setView("editor");
+              if (blockId) setBriefFocusId(blockId);
+            }}
             onDelivery={() => setView("delivery")}
             onReview={(target) => {
               const attrs = target.attrs;

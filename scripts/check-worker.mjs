@@ -3,6 +3,10 @@ import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
+import { notebookExample } from "../lib/folio/notebook.ts";
+import { connectComparisonFindings } from "../lib/folio/conclusions.ts";
+import { insertLinkedFinding } from "../lib/folio/linked-brief.ts";
+import { buildBackupBlob } from "../lib/folio/backup.ts";
 const worker = new Miniflare({
   modules: true,
   scriptPath: resolve("dist/server/index.js"),
@@ -46,7 +50,7 @@ try {
     "X-Folio-Account": createHash("sha256").update(owner).digest("hex"),
     Origin: url,
   };
-  const backup = {
+  let backup = {
     format: "folio-project",
     schemaVersion: 1,
     project: {
@@ -120,10 +124,20 @@ try {
           },
         },
       ],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     },
   };
+  const connected = connectComparisonFindings(notebookExample("en"));
+  connected.notebook.archived = backup.project.notebook.archived;
+  connected.deliveries = backup.project.deliveries;
+  connected.reviewHistory = backup.project.reviewHistory;
+  connected.content = insertLinkedFinding(
+    connected,
+    connected.comparison.cells[0].findingId,
+    "en",
+  ).content;
+  backup = JSON.parse(await (await buildBackupBlob(connected)).text());
   const save = await worker.dispatchFetch(`${url}/api/cloud/backups`, {
     method: "POST",
     headers: {
@@ -153,8 +167,20 @@ try {
     body: JSON.stringify(malformed),
   });
   assert.equal(invalid.status, 400);
+  const brokenLink = structuredClone(backup);
+  brokenLink.project.comparison.cells[0].findingId = "missing-finding";
+  const invalidLink = await worker.dispatchFetch(`${url}/api/cloud/backups`, {
+    method: "POST",
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+      "X-Folio-Upload-Id": randomUUID(),
+    },
+    body: JSON.stringify(brokenLink),
+  });
+  assert.equal(invalidLink.status, 400);
   console.log(
-    "Built Worker verified: fetch handler, assets, anonymous rejection, D1/R2 archive/delivery/history round trip and malformed-edition rejection.",
+    "Built Worker verified: fetch handler, assets, anonymous rejection, D1/R2 connected findings/brief/archive/delivery/history round trip, malformed-edition and dangling-link rejection.",
   );
 } finally {
   await worker.dispose();

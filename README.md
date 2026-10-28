@@ -1,5 +1,24 @@
 # Folio
 
+**Keep the source. Own the writing.**
+
+A local-first workspace for comparing options and writing evidence-backed briefs. Connect a comparison to research findings, keep original passages close, and review changes before updating your writing.
+
+[简体中文](README.zh-CN.md) · [Verification](QA.md) · [MIT license](LICENSE)
+
+Folio opens in English with a Chinese interface available. It needs no account for local work. On-device AI remains experimental and is enabled separately.
+
+## New in 0.12
+
+- **Safer recovery:** malformed file types, dates, page sequences, original-file metadata and conclusion links are rejected before a project enters local storage. Missing historical display fields are inferred only when safe. Originals, page identities, revisions, notes and unknown extension fields are retained.
+- **One conclusion across views:** new comparisons connect to findings automatically. Existing comparisons offer **Connect comparison**; existing independent findings are retained rather than guessed to be duplicates. Edit shared wording, evidence or review state from either view. Archived findings stay linked and must be restored before editing from the comparison.
+- **A connected brief:** add a finding or comparison once. Later changes appear in **Brief connections** and Research review, even when the quoted passage is unchanged. Preview the current writing beside the latest research, apply an update explicitly, or keep the writing independent. Replacing your manual edits requires confirmation; earlier drafts remain in version history.
+- **Fixed delivery:** saved editions remain unchanged. Delivery records unresolved connection warnings and strips internal connection metadata; Markdown, HTML and Word retain the authored text, tables and citations.
+
+Try it with the fictional sample: **More tools → Compare options → Connect comparison**, edit a cell, and use **Open linked finding**. Add it to the brief, change the finding, then review the update in the brief. Writing is never updated automatically.
+
+**Compatibility:** ordinary existing writing stays independent; this release does not guess which old paragraphs came from a finding. Backups containing connected sections require Folio 0.12 or later. Close older Folio instances before upgrading, keep an independent backup, and do not downgrade a workspace containing connected sections. The Site audience remains owner-only. This release adds no paid API, automatic cloud sync, collaboration or new model-quality claim.
+
 ## New in 0.11
 
 - **Read and collect:** source files open in a dedicated reader. Keep an exact passage as a finding under an existing or new question, add your interpretation and note, then continue reading or open the finding. Original page and revision stay attached; saving never implies human review or changes your brief.
@@ -35,16 +54,6 @@ The existing Site's audience remains owner-only. Public GitHub source does not m
 
 Keep an independent backup before upgrading or changing browsers. After migration, 0.7 and earlier cannot open the new schema; use the current recovery tools rather than downgrading. All projects still load into memory at startup; source updates still rewrite that source's complete history. Native downloads in the embedded browser and the original host-freeze root cause remain unresolved. See [verification](QA.md).
 
-
-**Keep the source. Own the writing.**
-
-A local-first research workspace for comparing options and writing evidence-backed decision briefs. Keep original passages close to your findings, distinguish facts from judgments, and revisit conclusions as sources change.
-
-[简体中文](README.zh-CN.md) · [Verification](QA.md) · [MIT license](LICENSE)
-
-Folio opens in English. Switch between **English / 中文** in the top bar on desktop and mobile; your preference is remembered. Changing the interface language never translates or overwrites your writing.
-
-> **0.11 working preview.** Questions, findings, source evidence and briefs share one research workflow. Optional cloud backups are available on Sites. On-device AI is experimental; automatic sync, collaboration, and OCR are not implemented.
 
 ## New in 0.7
 

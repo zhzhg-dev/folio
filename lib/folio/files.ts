@@ -134,7 +134,9 @@ export function markdown(node: JSONContent): string {
   return children
     .map(markdown)
     .join(
-      ["doc", "listItem", "table", "tableRow"].includes(node.type || "")
+      ["doc", "listItem", "table", "tableRow", "conclusionBlock"].includes(
+        node.type || "",
+      )
         ? "\n\n"
         : "",
     );
@@ -179,6 +181,8 @@ const escape = (s: string) =>
     .replaceAll('"', "&quot;");
 export function exportHtml(project: Project, language: Language = "en") {
   const render = (node: JSONContent): string => {
+    if (node.type === "conclusionBlock")
+      return (node.content || []).map(render).join("");
     if (node.text)
       return (node.marks || []).reduce(
         (v, m) =>
@@ -257,6 +261,7 @@ export async function exportWord(project: Project, language: Language = "en") {
     nodes: JSONContent[],
   ): (InstanceType<typeof Paragraph> | InstanceType<typeof Table>)[] =>
     nodes.flatMap((node) => {
+      if (node.type === "conclusionBlock") return blocks(node.content || []);
       if (node.type === "table")
         return [
           new Table({

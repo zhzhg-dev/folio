@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -34,7 +34,7 @@ type Props = {
   project: Project;
   language: Language;
   questionId: string;
-  onChange: (notebook: Notebook) => void;
+  onChange: (notebook: Notebook) => boolean;
   onStart: (objective: string) => void;
   onImport: () => void;
   onExample: () => void;
@@ -62,6 +62,16 @@ export default function ResearchNotebook({
 }: Props) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
   const notebook = notebookFor(project);
+  const findingsInBrief = useMemo(() => {
+    const ids = new Set<string>();
+    const visit = (node: Project["content"]) => {
+      if (node.type === "conclusionBlock" && node.attrs?.origin === "finding")
+        ids.add(String(node.attrs.findingId));
+      node.content?.forEach(visit);
+    };
+    visit(project.content);
+    return ids;
+  }, [project.content]);
   const question =
     notebook.questions.find((q) => q.id === questionId) ||
     notebook.questions[0];
@@ -497,7 +507,9 @@ export default function ResearchNotebook({
                         onClick={() => onAdd(finding)}
                       >
                         <Bookmark size={16} />
-                        {t("加入简报", "Add to brief")}
+                        {findingsInBrief.has(finding.id)
+                          ? t("查看关联简报", "View in brief")
+                          : t("加入简报", "Add to brief")}
                       </button>
                     </span>
                   </div>
@@ -566,12 +578,13 @@ export default function ResearchNotebook({
               evidence: cell.evidence,
               reviewedAt: cell.reviewedAt,
             };
-            onChange({
+            const accepted = onChange({
               ...notebook,
               findings: notebook.findings.some((f) => f.id === saved.id)
                 ? notebook.findings.map((f) => (f.id === saved.id ? saved : f))
                 : [...notebook.findings, saved],
             });
+            if (!accepted) return;
             setExpanded(saved.id);
             setEditing(null);
           }}

@@ -1,6 +1,6 @@
 {
   "name": "folio-workspace",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -14,7 +14,7 @@
     "format": "prettier --write app components/folio lib/folio scripts main.ts render.tsx recovery.ts",
     "eval": "node --experimental-strip-types scripts/evaluate-retrieval.mjs",
     "db:generate": "drizzle-kit generate",
-    "test:worker": "node scripts/check-worker.mjs"
+    "test:worker": "node --experimental-strip-types scripts/check-worker.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

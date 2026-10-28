@@ -42,6 +42,40 @@ const Citation = Node.create({
     ];
   },
 });
+const ConclusionBlock = Node.create({
+  name: "conclusionBlock",
+  group: "block",
+  content: "block+",
+  defining: true,
+  isolating: true,
+  addAttributes() {
+    return {
+      id: { default: "" },
+      origin: { default: "finding" },
+      findingId: { default: "" },
+      sourceRevision: { default: 1 },
+      sourceSignature: { default: "" },
+      baselineHash: { default: "" },
+      language: { default: "en" },
+    };
+  },
+  // Pasted HTML becomes ordinary writing. Connections are created only through
+  // the app, so a copied section cannot duplicate another section's identity.
+  parseHTML() {
+    return [];
+  },
+  renderHTML({ node }) {
+    return [
+      "section",
+      {
+        "data-conclusion-id": node.attrs.id,
+        "data-conclusion-origin": node.attrs.origin,
+        class: "linked-conclusion",
+      },
+      0,
+    ];
+  },
+});
 export default function DocumentEditor({
   content,
   projectId,
@@ -69,6 +103,7 @@ export default function DocumentEditor({
         }),
         TableKit,
         Citation,
+        ConclusionBlock,
       ],
       content,
       immediatelyRender: false,

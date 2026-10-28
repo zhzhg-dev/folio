@@ -180,6 +180,17 @@ export default function DeliveryView({
               "The preview shows what recipients will see. Saved or exported editions do not update with your research. Exported files cannot be remotely revoked.",
             )}
           </p>
+          {!!preview.checks.outdated && (
+            <p
+              className="delivery-caption linked-delivery-warning"
+              role="status"
+            >
+              {t(
+                `创建此版本时有 ${preview.checks.outdated} 处关联需要复核。此版本保留当时的正文，不会自动更新。`,
+                `${preview.checks.outdated} linked ${preview.checks.outdated === 1 ? "section" : "sections"} needed review when this edition was prepared. It preserves the writing from that moment.`,
+              )}
+            </p>
+          )}
           {copyText && (
             <label className="delivery-copy">
               {t("可手动复制下面的交付文本", "Copy the delivery text below")}

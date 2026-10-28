@@ -64,12 +64,14 @@ export type Snapshot = {
 export type ComparisonCell = {
   optionId: string;
   criterionId: string;
+  findingId?: string;
   value: string;
   kind: "fact" | "judgment" | "unknown";
   evidence: Evidence[];
   reviewedAt?: string;
 };
 export type Comparison = {
+  findingsLinked?: boolean;
   objective: string;
   constraints: string;
   options: { id: string; name: string; sourceIds: string[] }[];
@@ -103,6 +105,7 @@ export type Project = {
 };
 export type Finding = {
   id: string;
+  revision?: number;
   questionId: string;
   value: string;
   kind: ComparisonCell["kind"];
@@ -147,7 +150,9 @@ export function plainText(node: JSONContent): string {
   return (node.content || [])
     .map(plainText)
     .join(
-      ["doc", "bulletList", "orderedList"].includes(node.type || "")
+      ["doc", "bulletList", "orderedList", "conclusionBlock"].includes(
+        node.type || "",
+      )
         ? "\n\n"
         : "",
     );

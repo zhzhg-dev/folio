@@ -1,5 +1,13 @@
 # Folio product priorities
 
+## Current direction — 0.12
+
+Keep the evidence foundation and make conclusions reusable. Comparison cells can share a canonical finding; connected brief sections retain their origin, source revision and original writing baseline. Edits offer explicit previews rather than silent document replacement. Existing independent work stays independent until the user chooses a connection. Fixed delivery remains a snapshot.
+
+Delivered in this iteration: strict, backward-aware backup recovery; comparison/finding edit continuity; revision-aware brief connections; manual-edit and stale-preview protection; duplicate-insertion prevention; connection review and frozen delivery warnings. No new paid service or model was introduced.
+
+Next priority: validate one complete task—source documents to an evidence-backed option comparison and usable decision brief—using independently labeled real bilingual materials. Measure manual effort, missing conditions, evidence support and update accuracy. Improve retrieval/model adapters based on observed failures. Keep broad feature expansion, teams, billing and automatic monitoring out of the immediate scope. The original host-freeze investigation and public-user recruitment remain deferred.
+
 ## Current direction — 0.11
 
 Connect reading, collection, organization and retrieval before adding another top-level product area. Exact source passages become findings under a chosen question. A separate organizer provides reversible archives and ordering; global search spans active research with precise project-scoped navigation. Source revisions, notes and existing briefs survive organization. Core usage introduces no paid service.

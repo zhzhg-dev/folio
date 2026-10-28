@@ -28,8 +28,8 @@ export default function ReviewView({
   language: Language;
   initialSource?: string;
   onReview: (target: CitationTarget) => void;
-  onChange: (patch: Partial<Project>) => void;
-  onBrief: () => void;
+  onChange: (patch: Partial<Project>) => boolean;
+  onBrief: (blockId?: string) => void;
   onDelivery: () => void;
 }) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
@@ -51,6 +51,7 @@ export default function ReviewView({
     changed: t("原文已变", "Passage changed"),
     older: t("有新版本", "Newer version"),
     unreviewed: t("尚未核对", "Not reviewed"),
+    outdated: t("关联段落待复核", "Linked section needs review"),
   };
   const visible = items.filter(
     (item) =>
@@ -58,7 +59,9 @@ export default function ReviewView({
       (!sourceId || item.sourceIds.includes(sourceId)) &&
       (filter === "all" ||
         (filter === "updates"
-          ? item.status === "changed" || item.status === "older"
+          ? item.status === "changed" ||
+            item.status === "older" ||
+            item.status === "outdated"
           : item.status === filter)),
   );
   const active = items.find((item) => item.id === editing);
@@ -109,8 +112,9 @@ export default function ReviewView({
       },
       ...(project.reviewHistory || []),
     ].slice(0, 30);
+    let saved = false;
     if (finding && project.notebook)
-      onChange({
+      saved = onChange({
         notebook: {
           ...project.notebook,
           findings: project.notebook.findings.map((f) =>
@@ -128,7 +132,7 @@ export default function ReviewView({
         reviewHistory: history,
       });
     else if (project.comparison)
-      onChange({
+      saved = onChange({
         comparison: {
           ...project.comparison,
           cells: project.comparison.cells.map((c) =>
@@ -139,7 +143,7 @@ export default function ReviewView({
         },
         reviewHistory: history,
       });
-    setEditing(editable[position + 1]?.id || null);
+    if (saved) setEditing(editable[position + 1]?.id || null);
   };
   return (
     <section className="collection-page review-hub">
@@ -151,8 +155,8 @@ export default function ReviewView({
           <h1>{t("研究复核", "Research review")}</h1>
           <p>
             {t(
-              "跨问题检查来源与结论。每处修改由你确认，简报和发现各自保留。",
-              "Review sources and conclusions across questions. Findings and the brief remain independent.",
+              "检查来源、结论与关联段落的变化。预览后由你决定如何更新简报。",
+              "Review changes to sources, conclusions and linked sections. Preview updates before changing the brief.",
             )}
           </p>
         </div>
@@ -200,7 +204,10 @@ export default function ReviewView({
           >
             <option value="all">{t("所有待处理项", "All open items")}</option>
             <option value="updates">
-              {t("来源版本更新", "Source updates")}
+              {t("来源与结论更新", "Source & conclusion updates")}
+            </option>
+            <option value="outdated">
+              {t("关联段落待复核", "Linked sections")}
             </option>
             <option value="missing">
               {t("需要补证据", "Evidence needed")}
@@ -223,7 +230,12 @@ export default function ReviewView({
                 </span>
               </div>
               <p className="review-quote">
-                {item.value || t("尚未记录结论", "No conclusion recorded")}
+                {item.linkedBlockId
+                  ? t(
+                      "关联结论有变化或暂不可用。简报保留了原稿，请预览后决定如何处理。",
+                      "The linked conclusion changed or is unavailable. The brief preserves your writing; review before updating.",
+                    )
+                  : item.value || t("尚未记录结论", "No conclusion recorded")}
               </p>
               <div className="review-item-bottom">
                 <span>
@@ -243,14 +255,18 @@ export default function ReviewView({
                   <button
                     className="secondary-button"
                     onClick={() =>
-                      project.sources.some(
-                        (s) => s.id === item.target?.attrs.sourceId,
-                      )
-                        ? onReview(item.target!)
-                        : onBrief()
+                      item.linkedBlockId
+                        ? onBrief(item.linkedBlockId)
+                        : project.sources.some(
+                              (s) => s.id === item.target?.attrs.sourceId,
+                            )
+                          ? onReview(item.target!)
+                          : onBrief()
                     }
                   >
-                    {t("核对简报引用", "Review brief citation")}
+                    {item.linkedBlockId
+                      ? t("预览关联更新", "Review linked section")
+                      : t("核对简报引用", "Review brief citation")}
                     <ArrowUpRight size={14} />
                   </button>
                 ) : (

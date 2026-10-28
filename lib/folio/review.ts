@@ -1,7 +1,8 @@
 import type { JSONContent } from "@tiptap/react";
 import type { Project, ComparisonCell, Finding } from "./model.ts";
-import { citationStatus } from "./integrity.ts";
+import { citationStatus, collectCitations } from "./integrity.ts";
 import { cellStatus, validComparison } from "./comparison.ts";
+import { linkedBriefItems } from "./linked-brief.ts";
 
 export type CitationTarget = {
   path: number[];
@@ -13,12 +14,13 @@ export type ReviewItem = {
   scope: "findings" | "comparison" | "brief";
   title: string;
   value: string;
-  status: "missing" | "changed" | "older" | "unreviewed";
+  status: "missing" | "changed" | "older" | "unreviewed" | "outdated";
   sourceIds: string[];
   findingId?: string;
   optionId?: string;
   criterionId?: string;
   target?: CitationTarget;
+  linkedBlockId?: string;
 };
 export type ReviewRevision = {
   id: string;
@@ -133,7 +135,7 @@ export function projectReview(project: Project): ReviewItem[] {
   });
   const comparison = project.comparison;
   comparison?.cells
-    .filter((c) => c.value.trim() || c.evidence.length)
+    .filter((c) => !c.findingId && (c.value.trim() || c.evidence.length))
     .forEach((cell) => {
       const status = state(cell);
       if (status)
@@ -166,6 +168,31 @@ export function projectReview(project: Project): ReviewItem[] {
         target,
       });
   });
-  const priority = { missing: 0, changed: 1, older: 2, unreviewed: 3 };
+  linkedBriefItems(project)
+    .filter((item) => item.status !== "current")
+    .forEach((item) => {
+      result.push({
+        id: `linked:${item.id}`,
+        scope: "brief",
+        title: item.title,
+        value: "",
+        status: "outdated",
+        sourceIds: [
+          ...new Set(
+            collectCitations(item.candidate || item.block)
+              .map((citation) => String(citation.attrs?.sourceId || ""))
+              .filter(Boolean),
+          ),
+        ],
+        linkedBlockId: item.id,
+      });
+    });
+  const priority = {
+    missing: 0,
+    changed: 1,
+    outdated: 1,
+    older: 2,
+    unreviewed: 3,
+  };
   return result.sort((a, b) => priority[a.status] - priority[b.status]);
 }

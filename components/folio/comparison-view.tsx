@@ -9,7 +9,9 @@ import {
   Columns3,
   ArrowRight,
   Loader2,
+  Link2,
 } from "lucide-react";
+import { isLinkedFindingArchived } from "@/lib/folio/conclusions";
 import {
   Dialog,
   DialogContent,
@@ -48,10 +50,12 @@ import {
 type Props = {
   project: Project;
   language: Language;
-  onChange: (value: Comparison) => void;
+  onChange: (value: Comparison) => boolean;
   onImport: () => void;
   onExample: () => void;
   onBuild: () => void;
+  onConnect: () => void;
+  onOpenFinding: (id: string) => void;
 };
 export default function ComparisonView({
   project,
@@ -60,6 +64,8 @@ export default function ComparisonView({
   onImport,
   onExample,
   onBuild,
+  onConnect,
+  onOpenFinding,
 }: Props) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
   const c = project.comparison;
@@ -121,6 +127,12 @@ export default function ComparisonView({
     name: string;
   } | null>(null);
   const counts = comparisonProgress(project);
+  const independentCount =
+    c?.cells.filter(
+      (cell) => !cell.findingId && (cell.value.trim() || cell.evidence.length),
+    ).length || 0;
+  const archivedCell = (cell: ComparisonCell | undefined) =>
+    !!cell?.findingId && isLinkedFindingArchived(project, cell);
   const statusLabel = (status: string) =>
     ({
       reviewed: t("已核对", "Reviewed"),
@@ -195,6 +207,36 @@ export default function ComparisonView({
           {t("写入研究简报", "Build decision brief")}
         </button>
       </header>
+      <div className="comparison-linkbar">
+        <Link2 size={17} aria-hidden="true" />
+        <div>
+          <strong>
+            {c.findingsLinked
+              ? t("比较与发现保持关联", "Connected to your findings")
+              : t(
+                  "把比较与研究发现关联起来",
+                  "Keep comparison and findings together",
+                )}
+          </strong>
+          <p>
+            {c.findingsLinked
+              ? t(
+                  "在任一处编辑结论，另一处同步；简报更新仍由你确认。归档发现需恢复后编辑。",
+                  "Edit a conclusion in either view. Brief updates stay under your control. Restore archived findings before editing.",
+                )
+              : t(
+                  "保留现有独立发现和正文，为比较记录建立关联发现，今后在两处编辑同一结论。",
+                  "Keep existing independent findings and writing. Connect comparison entries to findings you can edit from either view.",
+                )}
+          </p>
+        </div>
+        {!c.findingsLinked && (
+          <button className="secondary-button" onClick={onConnect}>
+            {t("关联比较", "Connect comparison")}
+            {independentCount > 0 && <span>{independentCount}</span>}
+          </button>
+        )}
+      </div>
       <div className="comparison-intent">
         <label>
           <span>{t("这次要做什么决定？", "What are you deciding?")}</span>
@@ -282,8 +324,9 @@ export default function ComparisonView({
               const items = visibleItems.filter(
                 (item) => item.status !== "reviewed",
               );
-              setEditing(items[0]);
-              setQueue(items.slice(1));
+              const editable = items.filter((item) => !archivedCell(item.cell));
+              setEditing(editable[0] || null);
+              setQueue(editable.slice(1));
             }}
           >
             {t("连续核对", "Start review")}
@@ -348,6 +391,7 @@ export default function ComparisonView({
               <button
                 key={cellKey(item)}
                 className="comparison-review-row"
+                disabled={archivedCell(item.cell)}
                 onClick={() => {
                   setQueue([]);
                   setEditing(item);
@@ -527,6 +571,7 @@ export default function ComparisonView({
                       <button
                         className={`comparison-cell cell-${status}`}
                         aria-label={`${o.name} / ${r.name}`}
+                        disabled={archivedCell(cell)}
                         onClick={() => {
                           setQueue([]);
                           setEditing({ optionId: o.id, criterionId: r.id });
@@ -547,9 +592,14 @@ export default function ComparisonView({
                           {cell?.value || t("添加发现", "Add a finding")}
                         </span>
                         <span className="cell-evidence">
-                          {cell?.evidence.length
-                            ? `${cell.evidence.length} ${t("条引用", cell.evidence.length === 1 ? "citation" : "citations")}`
-                            : t("尚未附上证据", "No evidence attached")}
+                          {archivedCell(cell)
+                            ? t(
+                                "发现已归档，恢复后可编辑",
+                                "Finding archived. Restore to edit.",
+                              )
+                            : cell?.evidence.length
+                              ? `${cell.evidence.length} ${t("条引用", cell.evidence.length === 1 ? "citation" : "citations")}`
+                              : t("尚未附上证据", "No evidence attached")}
                         </span>
                         {!!candidateItems.find(
                           (item) =>
@@ -560,6 +610,17 @@ export default function ComparisonView({
                           </span>
                         )}
                       </button>
+                      {cell?.findingId && (
+                        <button
+                          className="comparison-finding-link"
+                          onClick={() => onOpenFinding(cell.findingId!)}
+                        >
+                          <Link2 size={12} aria-hidden="true" />
+                          {archivedCell(cell)
+                            ? t("恢复关联发现", "Restore linked finding")
+                            : t("查看关联发现", "Open linked finding")}
+                        </button>
+                      )}
                     </td>
                   );
                 })}
@@ -631,44 +692,52 @@ export default function ComparisonView({
       </div>
       <p className="comparison-footnote">
         {t(
-          "“已核对”表示你已人工检查。资料出现新版本后会重新提示复核。写入简报会追加到正文并保留原稿快照。",
-          "Reviewed means you checked the finding yourself. A new source version reopens the review. Building a brief appends it to your writing and keeps a snapshot of the earlier draft.",
+          "“已核对”表示你已人工检查。资料出现新版本后需复核。关联简报不会重复写入；比较变化后，可预览并确认更新，原稿保存在版本记录中。",
+          "Reviewed means you checked the finding yourself. New source revisions need review. A linked brief is added once; preview and confirm later updates. Version history keeps the earlier writing.",
         )}
       </p>
-      {editing && (
-        <CellEditor
-          key={`${editing.optionId}-${editing.criterionId}`}
-          project={project}
-          comparison={c}
-          language={language}
-          optionId={editing.optionId}
-          criterionId={editing.criterionId}
-          candidates={
-            candidateItems.find((item) => cellKey(item) === cellKey(editing))
-              ?.evidence || []
-          }
-          batchSearched={candidateItems.length > 0}
-          remaining={queue.length}
-          onClose={() => {
-            setEditing(null);
-            setQueue([]);
-          }}
-          onSave={(cell) => {
-            change({
-              cells: [
-                ...c.cells.filter(
-                  (x) =>
-                    x.optionId !== cell.optionId ||
-                    x.criterionId !== cell.criterionId,
-                ),
-                cell,
-              ],
-            });
-            setEditing(queue[0] || null);
-            setQueue(queue.slice(1));
-          }}
-        />
-      )}
+      {editing &&
+        !archivedCell(
+          c.cells.find(
+            (cell) =>
+              cell.optionId === editing.optionId &&
+              cell.criterionId === editing.criterionId,
+          ),
+        ) && (
+          <CellEditor
+            key={`${editing.optionId}-${editing.criterionId}`}
+            project={project}
+            comparison={c}
+            language={language}
+            optionId={editing.optionId}
+            criterionId={editing.criterionId}
+            candidates={
+              candidateItems.find((item) => cellKey(item) === cellKey(editing))
+                ?.evidence || []
+            }
+            batchSearched={candidateItems.length > 0}
+            remaining={queue.length}
+            onClose={() => {
+              setEditing(null);
+              setQueue([]);
+            }}
+            onSave={(cell) => {
+              const saved = change({
+                cells: [
+                  ...c.cells.filter(
+                    (x) =>
+                      x.optionId !== cell.optionId ||
+                      x.criterionId !== cell.criterionId,
+                  ),
+                  cell,
+                ],
+              });
+              if (!saved) return;
+              setEditing(queue[0] || null);
+              setQueue(queue.slice(1));
+            }}
+          />
+        )}
       <Dialog
         open={!!removing}
         onOpenChange={(open) => {

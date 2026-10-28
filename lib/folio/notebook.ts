@@ -291,6 +291,8 @@ export function validNotebook(value: unknown): value is Notebook {
       f &&
       str(f.id, 500) &&
       f.id &&
+      (f.revision === undefined ||
+        (Number.isSafeInteger(f.revision) && f.revision > 0)) &&
       str(f.note, 10000) &&
       n.questions.some((q) => q.id === f.questionId) &&
       validComparison({

@@ -4,8 +4,11 @@ import {
   collectCitations,
   citationStatus,
   validateDocument,
+  stripConclusionLinks,
+  containsConclusionLinks,
 } from "./integrity.ts";
 import { findingNodes, notebookFor, findingStatus } from "./notebook.ts";
+import { linkedBriefItems } from "./linked-brief.ts";
 
 export const deliveryLimits = {
   count: 10,
@@ -30,7 +33,12 @@ export type Delivery = {
   origin: "brief" | "findings";
   content: JSONContent;
   references: DeliveryReference[];
-  checks: { missing: number; updated: number; unreviewed: number };
+  checks: {
+    missing: number;
+    updated: number;
+    unreviewed: number;
+    outdated?: number;
+  };
 };
 export type DeliveryOptions = {
   title: string;
@@ -120,7 +128,7 @@ export function createDelivery(
     if (node.content) copy.content = node.content.map(clean);
     return copy;
   };
-  const content = clean(sourceContent);
+  const content = clean(stripConclusionLinks(sourceContent));
   const delivery: Delivery = {
     id: uid(),
     title: options.title.trim(),
@@ -139,6 +147,12 @@ export function createDelivery(
         options.origin === "findings"
           ? findings.filter((f) => findingStatus(f, project) !== "reviewed")
               .length
+          : 0,
+      outdated:
+        options.origin === "brief"
+          ? linkedBriefItems(project).filter(
+              (item) => item.status !== "current",
+            ).length
           : 0,
     },
   };
@@ -164,6 +178,7 @@ export function validDelivery(value: unknown): value is Delivery {
     !["en", "zh"].includes(d.language) ||
     !["brief", "findings"].includes(d.origin) ||
     !validateDocument(d.content) ||
+    containsConclusionLinks(d.content) ||
     d.content.type !== "doc" ||
     !Array.isArray(d.references) ||
     d.references.length > 2000 ||
@@ -174,6 +189,13 @@ export function validDelivery(value: unknown): value is Delivery {
     ![d.checks.missing, d.checks.updated, d.checks.unreviewed].every(
       (n) => Number.isSafeInteger(n) && n >= 0 && n <= 2000,
     )
+  )
+    return false;
+  if (
+    d.checks.outdated !== undefined &&
+    (!Number.isSafeInteger(d.checks.outdated) ||
+      d.checks.outdated < 0 ||
+      d.checks.outdated > 2000)
   )
     return false;
   if (
@@ -301,6 +323,9 @@ export function deliveryHtml(d: Delivery) {
     d.checks.unreviewed
       ? `${d.checks.unreviewed} ${t("条发现尚未完成人工核对", "findings need manual review")}`
       : "",
+    d.checks.outdated
+      ? `${d.checks.outdated} ${t("处正文关联需要复核", "linked sections need conclusion review")}`
+      : "",
   ]
     .filter(Boolean)
     .join(" · ");
@@ -360,8 +385,14 @@ export function deliveryMarkdown(d: Delivery) {
         changed: "Passage changed",
         missing: "Unresolved citation",
       };
-  const checks = zh
-    ? `创建时检查：${d.checks.missing} 条引用无法核实，${d.checks.updated} 条引用待更新复核，${d.checks.unreviewed} 条发现待人工核对。`
-    : `At preparation: ${d.checks.missing} unresolved citations, ${d.checks.updated} citations need version review, ${d.checks.unreviewed} findings need manual review.`;
+  const checks =
+    (zh
+      ? `创建时检查：${d.checks.missing} 条引用无法核实，${d.checks.updated} 条引用待更新复核，${d.checks.unreviewed} 条发现待人工核对。`
+      : `At preparation: ${d.checks.missing} unresolved citations, ${d.checks.updated} citations need version review, ${d.checks.unreviewed} findings need manual review.`) +
+    (d.checks.outdated
+      ? zh
+        ? ` ${d.checks.outdated} 处正文关联需要复核。`
+        : ` ${d.checks.outdated} linked sections need conclusion review.`
+      : "");
   return `# ${text(d.title)}\n\n${text(d.summary)}\n\n${text(d.createdAt)} · ${text(d.id)}\n\n${checks}\n\n${render(d.content)}\n\n---\n\n${zh ? "引用原文（创建时状态）" : "Source passages (status at preparation)"}\n\n${d.references.map((r, i) => `[${i + 1}] ${text(r.name)} · p. ${r.page || "?"} · ${text(r.versionDate || r.versionId)} · ${statuses[r.status]}\n\n> ${text(r.quote).replaceAll("\n", "\n> ")}`).join("\n\n")}\n\n${zh ? "固定版本；引用检查不代表结论已经证实。" : "Fixed edition. Citation checks do not establish that a conclusion is correct."}`;
 }

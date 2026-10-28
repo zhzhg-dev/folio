@@ -76,6 +76,7 @@ export function validComparison(value: unknown): value is Comparison {
     typeof v === "string" && v.length <= n;
   const unique = (ids: string[]) => new Set(ids).size === ids.length;
   if (
+    (c.findingsLinked !== undefined && typeof c.findingsLinked !== "boolean") ||
     ![c.objective, c.constraints, c.recommendation, c.limitations].every((v) =>
       str(v),
     ) ||
@@ -117,6 +118,8 @@ export function validComparison(value: unknown): value is Comparison {
         c.options.some((o) => o.id === x.optionId) &&
         c.criteria.some((r) => r.id === x.criterionId) &&
         str(x.value) &&
+        (x.findingId === undefined ||
+          (str(x.findingId, 500) && !!x.findingId)) &&
         ["fact", "judgment", "unknown"].includes(x.kind) &&
         (x.reviewedAt === undefined ||
           (str(x.reviewedAt, 100) &&
