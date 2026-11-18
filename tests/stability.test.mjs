@@ -94,12 +94,15 @@ test("an interrupted workspace requires confirmation; a cleanly closed one does 
   const store = memory();
   const first = startupSession(store, "first");
   assert.equal(first.needsRecovery, true);
+  assert.equal(first.firstVisit, true);
   assert.equal(store.getItem(STARTUP_KEY), null);
   first.start();
   assert.equal(startupSession(store, "after-crash").needsRecovery, true);
+  assert.equal(startupSession(store, "after-crash").firstVisit, false);
   first.finish();
   assert.equal(startupSession(store, "after-close").needsRecovery, false);
   assert.equal(startupSession(store, "safe-link", true).needsRecovery, true);
+  assert.equal(startupSession(memory(), "safe-link", true).firstVisit, false);
   const failed = startupSession(store, "failed");
   failed.start();
   failed.failed();

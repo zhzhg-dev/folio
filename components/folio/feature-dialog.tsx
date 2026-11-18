@@ -18,6 +18,7 @@ import { errorMessage } from "@/lib/folio/i18n";
 import StorageHealth from "./storage-health";
 import CloudBackups from "./cloud-backups";
 import type { Project, Source, Language } from "@/lib/folio/model";
+import { version } from "../../package.json";
 export default function FeatureDialog({
   kind,
   project,
@@ -78,7 +79,7 @@ export default function FeatureDialog({
         throw new Error(
           t("更新资料时请选择一个文件", "Select one file to update a source"),
         );
-      if (!updateSourceId && project.sources.length + files.length > 20)
+      if (!updateSourceId && files.length > 20)
         throw new Error(
           t("每个项目最多 20 份资料", "Up to 20 sources per project"),
         );
@@ -241,7 +242,7 @@ export default function FeatureDialog({
             </div>
           )}
           <p className="small-copy">
-            Folio 0.11.0 · {t("个人工作空间", "Personal workspace")}
+            Folio {version} · {t("个人工作空间", "Personal workspace")}
           </p>
           {error && (
             <p className="inline-error" role="alert">
@@ -378,11 +379,8 @@ export default function FeatureDialog({
             disabled={busy || !name.trim() || !text.trim()}
             onClick={() =>
               perform(async () => {
-                if (!updateSourceId && project.sources.length >= 20)
-                  throw new Error(
-                    t("每个项目最多 20 份资料", "Up to 20 sources per project"),
-                  );
                 const source = await sourceFromText(name.trim(), text);
+                if (!mounted.current) return;
                 onImport([source], updateSourceId);
                 onClose();
               })

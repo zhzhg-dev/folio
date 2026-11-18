@@ -19,6 +19,7 @@ export default function ReviewView({
   project,
   language,
   initialSource = "",
+  initialScope = "all",
   onReview,
   onChange,
   onBrief,
@@ -27,13 +28,14 @@ export default function ReviewView({
   project: Project;
   language: Language;
   initialSource?: string;
+  initialScope?: "all" | "brief";
   onReview: (target: CitationTarget) => void;
   onChange: (patch: Partial<Project>) => boolean;
   onBrief: (blockId?: string) => void;
   onDelivery: () => void;
 }) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
-  const [scope, setScope] = useState<"all" | ReviewItem["scope"]>("all");
+  const [scope, setScope] = useState<"all" | ReviewItem["scope"]>(initialScope);
   const [sourceId, setSourceId] = useState(
     project.sources.some((s) => s.id === initialSource) ? initialSource : "",
   );

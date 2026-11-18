@@ -20,7 +20,7 @@ test("new users start with their own objective, without fictional conclusions", 
   const data = freshWorkspace();
   assert.equal(data.language, "en");
   const p = data.projects[0];
-  assert.equal(p.lastView, "findings");
+  assert.equal(p.lastView, "comparison");
   assert.equal(p.example, undefined);
   assert.equal(p.sources.length, 0);
   assert.equal(p.notebook.findings.length, 0);

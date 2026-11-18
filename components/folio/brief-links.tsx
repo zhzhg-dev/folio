@@ -22,6 +22,7 @@ export type BriefLinksProps = {
   onContent: (content: JSONContent, snapshotTitle: string) => void;
   onOpenFinding?: (id: string) => void;
   onOpenComparison?: () => void;
+  initialBlock?: string;
 };
 const sectionText = (node: JSONContent) =>
   (node.content || []).map(plainText).join("\n\n");
@@ -32,6 +33,7 @@ export default function BriefLinks({
   onContent,
   onOpenFinding,
   onOpenComparison,
+  initialBlock,
 }: BriefLinksProps) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
   const items = useMemo(() => linkedBriefItems(project), [project]);
@@ -40,11 +42,14 @@ export default function BriefLinks({
   const [replaceEdited, setReplaceEdited] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
-    setOpen(false);
-    setPreview(null);
+    const initial = initialBlock
+      ? items.find((item) => item.id === initialBlock)
+      : undefined;
+    setOpen(!!initial);
+    setPreview(initial || null);
     setReplaceEdited(false);
     setError("");
-  }, [project.id]);
+  }, [project.id, initialBlock]);
   const pending = items.filter((item) => item.status !== "current").length;
   if (!items.length) return null;
   const labels = {

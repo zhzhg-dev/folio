@@ -24,11 +24,13 @@ import { download } from "@/lib/folio/files";
 export default function DeliveryView({
   project,
   language,
+  initialEdition,
   onChange,
   onReview,
 }: {
   project: Project;
   language: Language;
+  initialEdition?: string;
   onChange: (patch: Partial<Project>) => void;
   onReview: () => void;
 }) {
@@ -43,7 +45,11 @@ export default function DeliveryView({
     notebook.findings.map((f) => f.id),
   );
   const [notes, setNotes] = useState(false);
-  const [preview, setPreview] = useState<Delivery | null>(null);
+  const [preview, setPreview] = useState<Delivery | null>(
+    () =>
+      project.deliveries?.find((edition) => edition.id === initialEdition) ||
+      null,
+  );
   const [error, setError] = useState("");
   const [copyText, setCopyText] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);

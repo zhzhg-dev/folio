@@ -1,5 +1,6 @@
 import type { JSONContent } from "@tiptap/react";
 import type { Project } from "./model";
+import { pageContainsQuote } from "./evidence-cache.ts";
 export function citationStatus(
   attrs: Record<string, unknown>,
   project: Project,
@@ -12,13 +13,14 @@ export function citationStatus(
     typeof attrs.quote !== "string" ||
     !attrs.quote ||
     !version.pages.some(
-      (p) => p.page === attrs.page && p.text.includes(attrs.quote as string),
+      (p) =>
+        p.page === attrs.page && pageContainsQuote(p, attrs.quote as string),
     )
   )
     return "missing";
   const latest = source.versions[source.versions.length - 1];
   if (latest.id === version.id) return "current";
-  return latest.pages.some((p) => p.text.includes(attrs.quote as string))
+  return latest.pages.some((p) => pageContainsQuote(p, attrs.quote as string))
     ? "older"
     : "changed";
 }

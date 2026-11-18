@@ -30,12 +30,16 @@ class WorkspaceBoundary extends Component<
 
 export function renderWorkspace(
   root: HTMLElement,
-  events: { onReady: () => void; onFailure: () => void },
+  events: {
+    onReady: () => void;
+    onFailure: () => void;
+    initialLanguage?: "en" | "zh";
+  },
 ) {
   const view = createRoot(root);
   view.render(
     <WorkspaceBoundary onFailure={events.onFailure}>
-      <Home onReady={events.onReady} onFailure={events.onFailure} />
+      <Home {...events} />
     </WorkspaceBoundary>,
   );
   return () => view.unmount();

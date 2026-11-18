@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "frozenOn": "2026-11-18",
+  "labelPolicy": "Authored after reading primary sources but before the first evaluator execution. Expected evidence, authored conclusions and diagnostic targets are stored separately from source excerpts. Labels are not generated from retrieval results. No production retrieval changes are part of this evaluation.",
+  "scenario": {
+    "en": {
+      "objective": "Choose the lead example for a classroom handout explaining large reflecting space telescopes, using primary mirror diameter as the selection rule.",
+      "criteria": ["Primary mirror diameter", "Spectral coverage", "Annual operating cost"],
+      "recommendation": "Use Webb as the lead classroom example because its listed primary mirror diameter is larger. Use Hubble as the comparison. This is an authored educational choice, not a claim that one telescope is universally better.",
+      "limitations": "Only two short specification excerpts were reviewed. Wavelengths use different units; 115–2500 nm equals 0.115–2.5 microns. The operating cost is absent from these excerpts; absence is not zero cost. No image rights, observing time, resolution, availability or scientific suitability were evaluated.",
+      "unknown": "Annual operating cost is not stated in the supplied excerpt; consult a separate budget source.",
+      "revisionNotice": "SIMULATED LOCAL REVISION FOR ACCEPTANCE TESTING: the mirror row is deliberately omitted. This is not a NASA update."
+    },
+    "zh": {
+      "objective": "为介绍大型反射式空间望远镜的课堂讲义选择主案例，以主镜直径作为选择规则。",
+      "criteria": ["主镜直径", "光谱覆盖", "年度运行成本"],
+      "recommendation": "以韦布作为课堂主案例，因为所列主镜直径更大；以哈勃作为对照。这是作者作出的教学选择，不表示某一望远镜在所有方面都更好。",
+      "limitations": "仅核对两份简短规格摘录。波长单位不同：115–2500 纳米等于 0.115–2.5 微米。摘录未提供运行成本，缺失不代表零成本。未评估图像权利、观测时间、分辨率、可用性或科研适用性。中文材料是本评估作者翻译，并非 NASA 官方译文。",
+      "unknown": "所提供摘录未列出年度运行成本，需另行查阅预算来源。",
+      "revisionNotice": "验收测试用的模拟本地修订：有意省略主镜一行。这不是 NASA 的资料更新。"
+    }
+  },
+  "passageCases": [
+    { "id": "en-webb-mirror", "language": "en", "source": "webb", "criterion": 0, "query": "primary mirror diameter", "expected": "6.5 m", "kind": "fact", "value": "The listed primary mirror diameter is approximately 6.5 m." },
+    { "id": "en-hubble-mirror", "language": "en", "source": "hubble", "criterion": 0, "query": "primary mirror diameter", "expected": "2.4 m", "kind": "fact", "value": "The listed primary mirror diameter is 2.4 m." },
+    { "id": "en-webb-spectrum", "language": "en", "source": "webb", "criterion": 1, "query": "wavelength coverage", "expected": "0.6 - 28.5 microns", "kind": "fact", "value": "The table lists wavelength coverage of 0.6–28.5 microns." },
+    { "id": "en-hubble-spectrum", "language": "en", "source": "hubble", "criterion": 1, "query": "sensitivity to light", "expected": "115–2500 nanometers", "kind": "fact", "value": "The table lists sensitivity from ultraviolet through infrared, 115–2500 nanometers." },
+    { "id": "en-webb-cost", "language": "en", "source": "webb", "criterion": 2, "query": "annual operating cost", "expected": null, "kind": "unknown" },
+    { "id": "en-hubble-cost", "language": "en", "source": "hubble", "criterion": 2, "query": "annual operating cost", "expected": null, "kind": "unknown" },
+    { "id": "zh-webb-mirror", "language": "zh", "source": "webb", "criterion": 0, "query": "主镜直径", "expected": "6.5 米", "kind": "fact", "value": "所列主镜直径约为 6.5 米。" },
+    { "id": "zh-hubble-mirror", "language": "zh", "source": "hubble", "criterion": 0, "query": "主镜直径", "expected": "2.4 米", "kind": "fact", "value": "所列主镜直径为 2.4 米。" },
+    { "id": "zh-webb-spectrum", "language": "zh", "source": "webb", "criterion": 1, "query": "波长覆盖范围", "expected": "0.6 至 28.5 微米", "kind": "fact", "value": "表格所列波长覆盖范围为 0.6 至 28.5 微米。" },
+    { "id": "zh-hubble-spectrum", "language": "zh", "source": "hubble", "criterion": 1, "query": "对光的敏感范围", "expected": "115–2500 纳米", "kind": "fact", "value": "表格所列对光的敏感范围为紫外线至红外线，即 115–2500 纳米。" },
+    { "id": "zh-webb-cost", "language": "zh", "source": "webb", "criterion": 2, "query": "年度运行成本", "expected": null, "kind": "unknown" },
+    { "id": "zh-hubble-cost", "language": "zh", "source": "hubble", "criterion": 2, "query": "年度运行成本", "expected": null, "kind": "unknown" }
+  ],
+  "crossLanguageProbes": [
+    { "id": "zh-query-en-webb", "sourceLanguage": "en", "source": "webb", "query": "主镜直径", "expected": "6.5 m" },
+    { "id": "zh-query-en-hubble", "sourceLanguage": "en", "source": "hubble", "query": "主镜直径", "expected": "2.4 m" },
+    { "id": "en-query-zh-webb", "sourceLanguage": "zh", "source": "webb", "query": "primary mirror diameter", "expected": "6.5 米" },
+    { "id": "en-query-zh-hubble", "sourceLanguage": "zh", "source": "hubble", "query": "primary mirror diameter", "expected": "2.4 米" }
+  ],
+  "batchProbePolicy": "For each language, independently run searchComparison with the three unmodified criterion names. Positive targets are the four source-specific mirror/spectrum labels above; costs require abstention. Keep failures in the report; do not relabel missed evidence as success. Main workflows use the explicit field-aligned queries recorded in passageCases.",
+  "revision": {
+    "source": "webb",
+    "omitExcerptIndex": 0,
+    "expectedChangedCells": 2,
+    "expectedMirrorSearchResults": 0,
+    "expectedUnchangedCells": 4,
+    "expectOldEvidenceResolvable": true,
+    "expectFrozenEditionUnchanged": true
+  }
+}

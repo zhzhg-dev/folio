@@ -13,6 +13,71 @@
 .startup section {
   max-width: 540px;
 }
+.entry-welcome {
+  background: #f8faf4;
+  color: #263328;
+}
+.entry-welcome section {
+  width: min(100%, 490px);
+}
+.entry-welcome header,
+.entry-welcome footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.entry-welcome header {
+  border-bottom: 1px solid #d7dfd0;
+  padding-bottom: 16px;
+}
+.entry-welcome .startup-brand {
+  font:
+    600 30px/1 Georgia,
+    serif;
+  letter-spacing: -2px;
+}
+.startup.entry-welcome h1 {
+  font:
+    500 clamp(32px, 5vw, 48px)/1.12 Georgia,
+    "Songti SC",
+    serif;
+  letter-spacing: -0.035em;
+  margin: 42px 0 18px;
+  text-wrap: balance;
+}
+.startup.entry-welcome p {
+  color: #52614e;
+  max-width: 46ch;
+}
+.entry-welcome button[data-open] {
+  display: inline-flex;
+  gap: 24px;
+  align-items: center;
+  font-weight: 600;
+  margin: 16px 0 38px;
+  background: #e3efb8;
+  color: #293823;
+}
+.entry-welcome footer {
+  border-top: 1px solid #d7dfd0;
+  padding-top: 16px;
+  flex-wrap: wrap;
+}
+.entry-welcome footer small {
+  color: #56634e;
+}
+.entry-welcome .entry-language,
+.entry-welcome .entry-backup {
+  display: inline;
+  font-size: 13px;
+  background: transparent;
+  padding: 5px 0;
+  margin: 0;
+  color: #42553a;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .startup-brand {
   font-size: 24px;
   font-weight: 600;

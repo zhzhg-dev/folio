@@ -23,6 +23,7 @@ let attempt = 0;
 let startupTimer: ReturnType<typeof setTimeout> | undefined;
 let disposeWorkspace: (() => void) | undefined;
 let disposeRecovery: (() => void) | undefined;
+let welcomeLanguage: "en" | "zh" | undefined;
 window.addEventListener("pagehide", () => session.finish());
 window.addEventListener("pageshow", (e) => {
   if (e.persisted && started) session.start();
@@ -55,6 +56,7 @@ async function openWorkspace(safe: boolean) {
     const { renderWorkspace } = await import("./render");
     if (current !== attempt) return;
     disposeWorkspace = renderWorkspace(root, {
+      initialLanguage: welcomeLanguage,
       onReady: () => {
         if (current === attempt) clearTimeout(startupTimer);
       },
@@ -66,7 +68,25 @@ async function openWorkspace(safe: boolean) {
 }
 
 function showRecovery(failed = false) {
-  root.innerHTML = `<main class="startup"><section>
+  const welcome = session.firstVisit && !failed;
+  const zh = welcomeLanguage === "zh";
+  if (welcome) {
+    document.documentElement.lang = zh ? "zh-CN" : "en";
+    root.innerHTML = `<main class="startup entry-welcome"><section>
+      <header><span class="startup-brand">folio</span><button type="button" class="entry-language" data-language>${zh ? "English" : "中文"}</button></header>
+      <h1>${zh ? "把选择的依据，写进简报。" : "A decision brief with the evidence behind it."}</h1>
+      <p>${zh ? "并排比较备选方案，核对原文，再把建议和仍待确认的问题交给读者。" : "Compare your options, check the original passages, and give your reader a recommendation they can trace."}</p>
+      <button type="button" data-open>${zh ? "进入工作区" : "Open workspace"} <span aria-hidden="true">↗</span></button>
+      <footer><small>${zh ? "资料保存在此浏览器。无需账号。" : "Saved in this browser. No account required."}</small><button type="button" data-backup class="entry-backup">${zh ? "导出已存项目" : "Export saved projects"}</button></footer>
+      <div class="recovery-backups" data-projects></div>
+    </section></main>`;
+    root.querySelector("[data-language]")!.addEventListener("click", () => {
+      welcomeLanguage = zh ? "en" : "zh";
+      showRecovery();
+      root.querySelector<HTMLButtonElement>("[data-language]")?.focus();
+    });
+  } else {
+    root.innerHTML = `<main class="startup"><section>
     <span class="startup-brand">Folio.</span>
     <h1>${failed ? "Your workspace could not open." : "Open with fewer background tasks."}</h1>
     <p>${failed ? "Retry safely or export your saved projects below. Your saved work has not been changed." : "Startup protection is active. PDF previews and browser integrations will stay paused. Your saved work is unchanged."}</p>
@@ -76,6 +96,7 @@ function showRecovery(failed = false) {
     <small>You can leave this page open without loading the workspace.<br>停留在此页不会加载工作区。</small>
     <div class="recovery-backups" data-projects></div>
   </section></main>`;
+  }
   root
     .querySelector("[data-open]")!
     .addEventListener("click", () => void openWorkspace(true));
@@ -84,6 +105,8 @@ function showRecovery(failed = false) {
     .addEventListener("click", async (event) => {
       const button = event.currentTarget as HTMLButtonElement;
       button.disabled = true;
+      const language = root.querySelector<HTMLButtonElement>("[data-language]");
+      if (language) language.disabled = true;
       root.querySelector<HTMLButtonElement>("[data-open]")!.disabled = true;
       const host = root.querySelector<HTMLElement>("[data-projects]")!;
       try {
@@ -97,6 +120,7 @@ function showRecovery(failed = false) {
         host.textContent =
           "Backup tools could not load. Try again. / 备份工具未加载，请重试。";
         button.disabled = false;
+        if (language) language.disabled = false;
       } finally {
         const open = root.querySelector<HTMLButtonElement>("[data-open]");
         if (open) open.disabled = false;

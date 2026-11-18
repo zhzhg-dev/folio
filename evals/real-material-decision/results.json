@@ -1,0 +1,462 @@
+{
+  "evaluation": "Real-material decision workflow acceptance",
+  "sourceAccessDate": "2026-11-18",
+  "frozenSha256": {
+    "sources.json": "690caf7525b75128b582833f92d9344b33575ccf866501fa882663e379f04bb4",
+    "labels.json": "628c081fb529540815e483b05569cbf4ee18054c403e3b4143366f443fb0a9d9"
+  },
+  "hashEncoding": "UTF-8, CRLF normalized to LF; no other normalization",
+  "executedAt": "2026-11-18T07:24:27.423Z",
+  "runtime": "v24.14.1",
+  "methodology": "Author-designed deterministic production-function acceptance, using frozen primary-source excerpts and pre-execution labels. Review actions and source revisions are simulated. No model, live network, browser, cloud writes or independent human reviewers are involved in execution.",
+  "fieldAlignedPassages": {
+    "cases": 12,
+    "strictPasses": 12,
+    "positiveCases": 8,
+    "positiveRecallHits": 8,
+    "negativeCases": 4,
+    "correctAbstentions": 4,
+    "returnedPassages": 8,
+    "relevantReturnedPassages": 8,
+    "passagePrecision": 1,
+    "allQuotesExact": true,
+    "allSourcesScoped": true,
+    "results": [
+      {
+        "id": "en-webb-mirror",
+        "query": "primary mirror diameter",
+        "positive": true,
+        "expected": "6.5 m",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "Diameter of Primary Mirror: 6.5 m (21.3 ft) approximately"
+        ]
+      },
+      {
+        "id": "en-hubble-mirror",
+        "query": "primary mirror diameter",
+        "positive": true,
+        "expected": "2.4 m",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "Primary Mirror Diameter: 94.5 inches (2.4 m)"
+        ]
+      },
+      {
+        "id": "en-webb-spectrum",
+        "query": "wavelength coverage",
+        "positive": true,
+        "expected": "0.6 - 28.5 microns",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "Wavelength Coverage: 0.6 - 28.5 microns"
+        ]
+      },
+      {
+        "id": "en-hubble-spectrum",
+        "query": "sensitivity to light",
+        "positive": true,
+        "expected": "115–2500 nanometers",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "Sensitivity to Light: ultraviolet through infrared (115–2500 nanometers)"
+        ]
+      },
+      {
+        "id": "en-webb-cost",
+        "query": "annual operating cost",
+        "positive": false,
+        "expected": null,
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": []
+      },
+      {
+        "id": "en-hubble-cost",
+        "query": "annual operating cost",
+        "positive": false,
+        "expected": null,
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": []
+      },
+      {
+        "id": "zh-webb-mirror",
+        "query": "主镜直径",
+        "positive": true,
+        "expected": "6.5 米",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "主镜直径：约 6.5 米（21.3 英尺）"
+        ]
+      },
+      {
+        "id": "zh-hubble-mirror",
+        "query": "主镜直径",
+        "positive": true,
+        "expected": "2.4 米",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "主镜直径：94.5 英寸（2.4 米）"
+        ]
+      },
+      {
+        "id": "zh-webb-spectrum",
+        "query": "波长覆盖范围",
+        "positive": true,
+        "expected": "0.6 至 28.5 微米",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "波长覆盖范围：0.6 至 28.5 微米"
+        ]
+      },
+      {
+        "id": "zh-hubble-spectrum",
+        "query": "对光的敏感范围",
+        "positive": true,
+        "expected": "115–2500 纳米",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "对光的敏感范围：紫外线至红外线（115–2500 纳米）"
+        ]
+      },
+      {
+        "id": "zh-webb-cost",
+        "query": "年度运行成本",
+        "positive": false,
+        "expected": null,
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": []
+      },
+      {
+        "id": "zh-hubble-cost",
+        "query": "年度运行成本",
+        "positive": false,
+        "expected": null,
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": []
+      }
+    ]
+  },
+  "criterionNameBatch": {
+    "cases": 12,
+    "strictPasses": 8,
+    "positiveCases": 8,
+    "positiveRecallHits": 4,
+    "negativeCases": 4,
+    "correctAbstentions": 4,
+    "returnedPassages": 4,
+    "relevantReturnedPassages": 4,
+    "passagePrecision": 1,
+    "allQuotesExact": true,
+    "allSourcesScoped": true,
+    "results": [
+      {
+        "id": "batch-en-webb-mirror",
+        "query": "Primary mirror diameter",
+        "positive": true,
+        "expected": "6.5 m",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "Diameter of Primary Mirror: 6.5 m (21.3 ft) approximately"
+        ]
+      },
+      {
+        "id": "batch-en-hubble-mirror",
+        "query": "Primary mirror diameter",
+        "positive": true,
+        "expected": "2.4 m",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "Primary Mirror Diameter: 94.5 inches (2.4 m)"
+        ]
+      },
+      {
+        "id": "batch-en-webb-spectrum",
+        "query": "Spectral coverage",
+        "positive": true,
+        "expected": "0.6 - 28.5 microns",
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": false,
+        "quotes": []
+      },
+      {
+        "id": "batch-en-hubble-spectrum",
+        "query": "Spectral coverage",
+        "positive": true,
+        "expected": "115–2500 nanometers",
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": false,
+        "quotes": []
+      },
+      {
+        "id": "batch-en-webb-cost",
+        "query": "Annual operating cost",
+        "positive": false,
+        "expected": null,
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": []
+      },
+      {
+        "id": "batch-en-hubble-cost",
+        "query": "Annual operating cost",
+        "positive": false,
+        "expected": null,
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": []
+      },
+      {
+        "id": "batch-zh-webb-mirror",
+        "query": "主镜直径",
+        "positive": true,
+        "expected": "6.5 米",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "主镜直径：约 6.5 米（21.3 英尺）"
+        ]
+      },
+      {
+        "id": "batch-zh-hubble-mirror",
+        "query": "主镜直径",
+        "positive": true,
+        "expected": "2.4 米",
+        "returned": 1,
+        "relevant": 1,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": [
+          "主镜直径：94.5 英寸（2.4 米）"
+        ]
+      },
+      {
+        "id": "batch-zh-webb-spectrum",
+        "query": "光谱覆盖",
+        "positive": true,
+        "expected": "0.6 至 28.5 微米",
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": false,
+        "quotes": []
+      },
+      {
+        "id": "batch-zh-hubble-spectrum",
+        "query": "光谱覆盖",
+        "positive": true,
+        "expected": "115–2500 纳米",
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": false,
+        "quotes": []
+      },
+      {
+        "id": "batch-zh-webb-cost",
+        "query": "年度运行成本",
+        "positive": false,
+        "expected": null,
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": []
+      },
+      {
+        "id": "batch-zh-hubble-cost",
+        "query": "年度运行成本",
+        "positive": false,
+        "expected": null,
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": true,
+        "quotes": []
+      }
+    ]
+  },
+  "crossLanguage": {
+    "cases": 4,
+    "strictPasses": 0,
+    "positiveCases": 4,
+    "positiveRecallHits": 0,
+    "negativeCases": 0,
+    "correctAbstentions": 0,
+    "returnedPassages": 0,
+    "relevantReturnedPassages": 0,
+    "passagePrecision": null,
+    "allQuotesExact": true,
+    "allSourcesScoped": true,
+    "results": [
+      {
+        "id": "zh-query-en-webb",
+        "query": "主镜直径",
+        "positive": true,
+        "expected": "6.5 m",
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": false,
+        "quotes": []
+      },
+      {
+        "id": "zh-query-en-hubble",
+        "query": "主镜直径",
+        "positive": true,
+        "expected": "2.4 m",
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": false,
+        "quotes": []
+      },
+      {
+        "id": "en-query-zh-webb",
+        "query": "primary mirror diameter",
+        "positive": true,
+        "expected": "6.5 米",
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": false,
+        "quotes": []
+      },
+      {
+        "id": "en-query-zh-hubble",
+        "query": "primary mirror diameter",
+        "positive": true,
+        "expected": "2.4 米",
+        "returned": 0,
+        "relevant": 0,
+        "exact": true,
+        "scoped": true,
+        "pass": false,
+        "quotes": []
+      }
+    ]
+  },
+  "workflows": [
+    {
+      "language": "en",
+      "passed": true,
+      "checks": [
+        "authored conclusions are unreviewed until an explicit review action",
+        "unknowns stay unresolved and require written limitations",
+        "linked brief retains facts, explicit unknowns and authored decision",
+        "frozen delivery preserves four exact source/version/page references",
+        "backup restore retains connected records, brief, edition and citation IDs",
+        "both imported originals survive backup byte-for-byte",
+        "simulated source revision flags only that option without overwriting old evidence",
+        "working brief changes only on explicit update; old delivery remains frozen",
+        "second backup retains both revisions, review warning and original frozen delivery"
+      ],
+      "backupBytes": 22296,
+      "afterRevisionBackupBytes": 23445
+    },
+    {
+      "language": "zh",
+      "passed": true,
+      "checks": [
+        "authored conclusions are unreviewed until an explicit review action",
+        "unknowns stay unresolved and require written limitations",
+        "linked brief retains facts, explicit unknowns and authored decision",
+        "frozen delivery preserves four exact source/version/page references",
+        "backup restore retains connected records, brief, edition and citation IDs",
+        "both imported originals survive backup byte-for-byte",
+        "simulated source revision flags only that option without overwriting old evidence",
+        "working brief changes only on explicit update; old delivery remains frozen",
+        "second backup retains both revisions, review warning and original frozen delivery"
+      ],
+      "backupBytes": 21640,
+      "afterRevisionBackupBytes": 22731
+    }
+  ],
+  "limitations": [
+    "Two tiny sources and one author-designed educational decision in two languages; not representative or held out.",
+    "Source-field-aligned queries were deliberately labeled before execution; general criterion names are separately scored and can miss evidence.",
+    "Chinese material is the evaluation author's translation, not an independently reviewed NASA translation; same-language success is not cross-language success.",
+    "The recommendation and limitation text are authored inputs, not generated answers; no answer accuracy, scientific recommendation quality, user effort or time saved is measured.",
+    "No PDF extraction, OCR, browser UX, accessibility, full-document scale, GPU/model inference, local database persistence or cloud account behavior is evaluated here.",
+    "Removing the mirror row is a synthetic local revision to test lifecycle handling, not a claim that NASA revised its specifications.",
+    "Diagnostic batch and cross-language misses remain failures in their own metrics; they are not relabeled as successful abstention."
+  ]
+}

@@ -1,5 +1,11 @@
 # Folio product priorities
 
+## 1.0 — individual decision briefs
+
+The release supports a complete task using documents a person already has. Define a decision and its options, assign sources, compare evidence, document open conditions, review a linked draft and save a fixed recipient edition. New projects open in Compare. Existing projects keep their content and last view.
+
+The next research-quality gate is a second independently labeled task with longer bilingual documents and paraphrases. Measure unsupported conclusions, missed conditions and manual effort before changing inference providers or expanding hosting. The first real-material acceptance case and its observed retrieval limits are recorded in [EVALUATION.md](EVALUATION.md).
+
 ## Current direction — 0.12
 
 Keep the evidence foundation and make conclusions reusable. Comparison cells can share a canonical finding; connected brief sections retain their origin, source revision and original writing baseline. Edits offer explicit previews rather than silent document replacement. Existing independent work stays independent until the user chooses a connection. Fixed delivery remains a snapshot.

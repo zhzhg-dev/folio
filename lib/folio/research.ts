@@ -7,6 +7,7 @@ import {
   type ResearchTurn,
 } from "./model.ts";
 import { contextualQuery, retrieve } from "./retrieval.ts";
+import { pageContainsQuote } from "./evidence-cache.ts";
 
 export const initialResearch = (project: Project): ResearchState =>
   project.research || {
@@ -21,7 +22,7 @@ export function evidenceExists(e: Evidence, project: Project) {
     !!project.sources
       .find((s) => s.id === e.sourceId)
       ?.versions.find((v) => v.id === e.versionId)
-      ?.pages.some((p) => p.page === e.page && p.text.includes(e.quote))
+      ?.pages.some((p) => p.page === e.page && pageContainsQuote(p, e.quote))
   );
 }
 export function findPassages(

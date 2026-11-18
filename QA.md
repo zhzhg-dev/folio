@@ -1,5 +1,13 @@
 # Folio verification
 
+## 1.0.0 decision briefs — 2026-11-18
+
+- All **209 automated tests** passed, along with type checking, the production client/server build and the compiled Worker on local D1 and R2 bindings. The older fictional retrieval set scored 40/40.
+- In an isolated desktop Chrome session, two named options received separate sources through paste and file upload. Suggested actions opened the correct cell, quotation search stayed within the assigned option, manual review was explicit, and a recommendation produced a linked brief. The recipient preview and frozen edition preserved the checked passages. After a recommendation edit, the app offered an update and a new edition. A downloaded project backup restored into a separate project and survived reload.
+- English desktop and Chinese 390px layouts were checked. Fresh entry waited for a click, and language selection carried into the workspace. Testing used local projects. The original embedded-host freeze investigation remains deferred.
+- With 72 comparison entries and 576 references, the regression test counts exact quote scans. Rewriting a recommendation reuses results against unchanged source text. Editing the source text invalidates the affected checks.
+- The offline real-material acceptance case uses short NASA excerpts and labeled Chinese translations. Field-aligned cases scored 12/12, unconfigured criterion-name queries 8/12 and cross-language astronomy probes 0/4. Both decision lifecycles passed. Repeat the measurements with `npm run eval:decision`. [Results and scope](EVALUATION.md#10-real-material-decision-acceptance)
+
 ## 0.12 connected conclusions and safer recovery — 2026-10-29
 
 - Type checking, all **173 automated tests**, and the production client/server build pass. The 40-case retrieval development set remains 40/40; it is not an answer-quality benchmark. Forty-six added checks cover backup metadata compatibility and rejection, shared conclusion edits, explicit review after editing, archival/capacity boundaries, linked writing, guarded replacement, export continuity and complete persistence/restore workflows.

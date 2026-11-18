@@ -1,7 +1,7 @@
 {
-  "name": "Folio — Research & Writing",
+  "name": "Folio — Research & decisions",
   "short_name": "Folio",
-  "description": "A local-first workspace for sources, ideas and writing.",
+  "description": "Compare options, check the original passages, and deliver an evidence-backed decision brief.",
   "lang": "en",
   "start_url": "/",
   "scope": "/",

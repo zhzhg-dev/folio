@@ -23,7 +23,7 @@ export function emptyNotebook(): Notebook {
 export function freshWorkspace() {
   const project = makeProject("Untitled research", "en");
   project.notebook = emptyNotebook();
-  project.lastView = "findings";
+  project.lastView = "comparison";
   return {
     schemaVersion: 1 as const,
     projects: [project],

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "frozenOn": "2026-11-18",
+  "selection": "Two NASA primary-source specification tables, selected separately from the fictional Folio development fixtures. This is an author-designed acceptance case, not an independent external evaluation.",
+  "rights": {
+    "policyUrl": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+    "note": "Minimal factual NASA table excerpts for informational evaluation, with attribution. NASA's reuse guidance permits factual informational use without implying endorsement and warns that third-party materials and identifiers can have separate restrictions. No images, emblems, logos or third-party media are included. This is not a blanket CC0 claim for NASA websites. Each page contributes fewer than 25 English whitespace-delimited words, excluding the added attribution header.",
+    "translation": "Chinese excerpts are translations authored for this evaluation on 2026-11-18, not official NASA translations. Their wording is frozen before execution; no human translation panel reviewed them."
+  },
+  "sources": [
+    {
+      "id": "webb",
+      "name": "James Webb Space Telescope",
+      "publisher": "NASA Science",
+      "title": "Fact Sheet",
+      "url": "https://science.nasa.gov/mission/webb/fact-sheet/",
+      "accessedOn": "2026-11-18",
+      "location": "Key Facts table: Diameter of Primary Mirror and Wavelength Coverage",
+      "transcription": "Table cells joined with a colon; HTML whitespace normalized. Numbers, units and wording retained. This is a minimal excerpt, not the complete page or PDF.",
+      "en": [
+        "Diameter of Primary Mirror: 6.5 m (21.3 ft) approximately",
+        "Wavelength Coverage: 0.6 - 28.5 microns"
+      ],
+      "zh": [
+        "主镜直径：约 6.5 米（21.3 英尺）",
+        "波长覆盖范围：0.6 至 28.5 微米"
+      ]
+    },
+    {
+      "id": "hubble",
+      "name": "Hubble Space Telescope",
+      "publisher": "NASA Science",
+      "title": "About Hubble",
+      "url": "https://science.nasa.gov/mission/hubble/overview/about-hubble/",
+      "accessedOn": "2026-11-18",
+      "location": "Facts tables: Optical Capabilities / Sensitivity to Light; Hubble's Mirrors / Primary Mirror Diameter",
+      "transcription": "Table cells joined with a colon; HTML whitespace normalized. Numbers, units and wording retained. This is a minimal excerpt, not the complete page or PDF.",
+      "en": [
+        "Primary Mirror Diameter: 94.5 inches (2.4 m)",
+        "Sensitivity to Light: ultraviolet through infrared (115–2500 nanometers)"
+      ],
+      "zh": [
+        "主镜直径：94.5 英寸（2.4 米）",
+        "对光的敏感范围：紫外线至红外线（115–2500 纳米）"
+      ]
+    }
+  ]
+}

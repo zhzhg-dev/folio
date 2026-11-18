@@ -694,6 +694,59 @@ summary:focus-visible {
   width: 100%;
   padding: 44px max(32px, calc((100% - 650px) / 2)) 35px;
 }
+.decision-entry {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: clamp(18px, 4vw, 48px);
+}
+.decision-entry-inner {
+  width: min(100%, 720px);
+  margin: 0 auto;
+}
+.decision-sample-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  padding: 5px 0;
+  color: #49613a;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.decision-details {
+  margin: 14px 0;
+  color: var(--ink-secondary);
+  font-size: 0.875rem;
+}
+.decision-details summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 6px 0;
+}
+.decision-details .comparison-intent {
+  padding-top: 10px;
+}
+.comparison-heading h1 {
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.comparison-heading > button {
+  flex-shrink: 0;
+}
+@media (max-width: 590px) {
+  .workspace-tabs > div:first-child {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .workspace-tabs > div:first-child > button {
+    padding-inline: 7px;
+  }
+  .decision-entry {
+    padding: 22px 18px;
+  }
+}
 .welcome-symbol {
   width: 44px;
   height: 44px;

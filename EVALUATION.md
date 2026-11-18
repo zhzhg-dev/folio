@@ -29,3 +29,21 @@ Worker tests additionally verify cancellation, deadline cleanup, pre-aborted req
 ## Limits
 
 These cases were used while developing the change; they are not a held-out or external benchmark. The vocabulary covers a small set of project/document concepts, not general bilingual translation. Conservative filtering can miss relevant paraphrases, and summaries are bounded extracts rather than exhaustive coverage. No embedding model is used. This evaluation does not measure generated-answer correctness, semantic entailment, hallucination rate or performance on real users' documents. Separate worker tests verify cancellation, deadlines, disposal and lean payloads.
+
+## 1.0 real-material decision acceptance
+
+On 2026-11-18, a separately sourced case used two real primary pages: [NASA's Webb Fact Sheet](https://science.nasa.gov/mission/webb/fact-sheet/) and [About Hubble](https://science.nasa.gov/mission/hubble/overview/about-hubble/). Minimal English table excerpts and explicitly labeled author translations into Chinese are frozen in [evals/real-material-decision/sources.json](evals/real-material-decision/sources.json). Queries, expected evidence and authored decisions were frozen separately before execution in [labels.json](evals/real-material-decision/labels.json), with SHA-256 checks in the runner. This is an author-designed development acceptance case, not external validation or an independent human/user study.
+
+Run `node --experimental-strip-types scripts/evaluate-real-decision.mjs` (add `--json` for individual outcomes). `npm run eval` still runs only the earlier fictional set. The real-material command runs offline against production import, search, decision, conclusion, linked brief, delivery and backup functions. See the [method, source rights, commands and limits](evals/real-material-decision/README.md) and [recorded results](evals/real-material-decision/results.json).
+
+| Measure                                          | Result                                                                  |
+| ------------------------------------------------ | ----------------------------------------------------------------------- |
+| Field-aligned same-language queries, EN/ZH       | 12/12 strict cases; positive recall 8/8; correct unknown abstention 4/4 |
+| Exact, relevant returned passages in those cases | 8/8, all scoped to the requested source                                 |
+| Unmodified criterion-name batch queries          | 8/12 strict cases; positive recall 4/8; correct unknown abstention 4/4  |
+| Cross-language astronomy queries                 | 0/4 positive targets recalled; zero passages returned                   |
+| Full decision lifecycle                          | 2/2 language variants; 9 invariant groups each                          |
+
+The educational scenario chooses a classroom example using mirror diameter, records spectral coverage and leaves operating cost explicitly unknown. The workflow preserves linked findings, an authored recommendation and limitations, exact citations, original imported bytes, a frozen delivery and two backup/restore rounds. A clearly labeled synthetic local revision omits one specification row: only that option's two factual cells need review, the old evidence stays resolvable and the old delivery remains fixed. Review timestamps simulate user actions; no independent person reviewed the recommendation.
+
+The batch misses concern spectral-coverage phrasing, and the cross-language misses concern astronomy terms outside the finite alias list. They remain failed positive cases, not successful abstentions. `--strict` includes these diagnostic gaps in the exit status and currently exits 1; the default command reports them while asserting the narrower field-aligned workflow. No retrieval code was tuned to this corpus. Tiny excerpts and field-aligned queries do not establish broad retrieval quality, generated-answer accuracy, scientific decision quality, real-user time savings, PDF extraction or full-document performance.

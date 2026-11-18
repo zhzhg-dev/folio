@@ -10,14 +10,17 @@ export function startupSession(
 ) {
   let failed = false;
   let needsRecovery = requested;
+  let firstVisit = false;
   try {
-    needsRecovery ||=
-      !!storage.getItem(STARTUP_KEY) || storage.getItem(ACK_KEY) !== "1";
+    const interrupted = !!storage.getItem(STARTUP_KEY);
+    firstVisit = !requested && !interrupted && storage.getItem(ACK_KEY) !== "1";
+    needsRecovery ||= interrupted || firstVisit;
   } catch {
     needsRecovery = true;
   }
   return {
     needsRecovery,
+    firstVisit,
     start() {
       failed = false;
       try {

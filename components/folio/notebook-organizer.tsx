@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Archive, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import type {
   Project,
@@ -21,16 +21,27 @@ export default function NotebookOrganizer({
   language,
   onChange,
   onOpen,
+  archivedTarget,
 }: {
   project: Project;
   language: Language;
   onChange: (n: Notebook) => void;
   onOpen: (questionId: string, findingId?: string) => void;
+  archivedTarget?: { kind: "finding" | "question"; id: string } | null;
 }) {
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
   const notebook = notebookFor(project);
-  const [tab, setTab] = useState<"active" | "archived">("active"),
+  const [tab, setTab] = useState<"active" | "archived">(
+      archivedTarget ? "archived" : "active",
+    ),
     [expanded, setExpanded] = useState("");
+  const initialEntry = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (archivedTarget) {
+      initialEntry.current?.scrollIntoView({ block: "nearest" });
+      initialEntry.current?.focus({ preventScroll: true });
+    }
+  }, [archivedTarget]);
   const [destinations, setDestinations] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState("");
   const [message, setMessage] = useState("");
@@ -313,7 +324,20 @@ export default function NotebookOrganizer({
             </div>
           )}
           {notebook.archived?.map((entry) => (
-            <section className="organizer-archived" key={entry.id}>
+            <section
+              className="organizer-archived"
+              key={entry.id}
+              tabIndex={-1}
+              ref={
+                (archivedTarget?.kind === "question" &&
+                  entry.kind === "question" &&
+                  entry.question.id === archivedTarget.id) ||
+                (archivedTarget?.kind === "finding" &&
+                  entry.findings.some((f) => f.id === archivedTarget.id))
+                  ? initialEntry
+                  : undefined
+              }
+            >
               <div>
                 <small>
                   {entry.kind === "question"

@@ -30,7 +30,6 @@ import {
   Languages,
   ArrowRight,
   MessageSquare,
-  Columns3,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -58,7 +57,6 @@ import {
 import { Toaster, toast } from "sonner";
 import type { Editor } from "@tiptap/react";
 import {
-  seedWorkspace,
   makeProject,
   plainText,
   citations,
@@ -104,6 +102,7 @@ import {
   type SearchHit,
 } from "@/lib/folio/workspace-search";
 import {
+  freshWorkspace,
   emptyNotebook,
   notebookExample,
   notebookFor,
@@ -119,7 +118,13 @@ import {
   type CitationTarget,
 } from "@/lib/folio/review";
 import ComparisonView from "./comparison-view";
-import { emptyComparison, comparisonProgress } from "@/lib/folio/comparison";
+import { comparisonExample } from "@/lib/folio/comparison";
+import DecisionSetup from "./decision-setup";
+import {
+  buildDecisionProject,
+  type DecisionSetupInput,
+} from "@/lib/folio/decision-project";
+import { importProjectSources } from "@/lib/folio/import-sources";
 import {
   exportMarkdown,
   exportWord,
@@ -178,8 +183,13 @@ function NavigationContent({ children }: { children: React.ReactNode }) {
 export default function Workspace({
   onReady: workspaceReady,
   onFailure,
-}: { onReady?: () => void; onFailure?: () => void } = {}) {
-  const [data, setData] = useState<WorkspaceData>(seedWorkspace);
+  initialLanguage,
+}: {
+  onReady?: () => void;
+  onFailure?: () => void;
+  initialLanguage?: Language;
+} = {}) {
+  const [data, setData] = useState<WorkspaceData>(freshWorkspace);
   const dataRef = useRef(data);
   dataRef.current = data;
   const [loaded, setLoaded] = useState(false);
@@ -191,6 +201,7 @@ export default function Workspace({
   const [questionId, setQuestionId] = useState("");
   const [newQuestion, setNewQuestion] = useState("");
   const [focus, setFocus] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [dialog, setDialog] = useState<string | null>(() =>
     new URLSearchParams(location.search).get("account") === "1"
       ? "settings"
@@ -200,7 +211,18 @@ export default function Workspace({
   if (dialog) dialogRef.current = dialog;
   const dialogKind = dialog || dialogRef.current;
   const [newName, setNewName] = useState("");
-  const [newTemplate, setNewTemplate] = useState("research");
+  const [newTemplate, setNewTemplate] = useState("comparison");
+  const [importOption, setImportOption] = useState("");
+  const [entryDelivery, setEntryDelivery] = useState<string | undefined>();
+  const [entryLink, setEntryLink] = useState<string | undefined>();
+  const [reviewBriefOnly, setReviewBriefOnly] = useState(false);
+  const [archivedFocus, setArchivedFocus] = useState<{
+    kind: "finding" | "question";
+    id: string;
+  } | null>(null);
+  useEffect(() => {
+    if (dialog !== "organize") setArchivedFocus(null);
+  }, [dialog]);
   const [pendingNavigation, setPendingNavigation] = useState<SearchHit | null>(
     null,
   );
@@ -258,6 +280,10 @@ export default function Workspace({
   };
   useEffect(() => {
     setSelectedSource(null);
+    setImportOption("");
+    setEntryDelivery(undefined);
+    setEntryLink(undefined);
+    setReviewBriefOnly(false);
     setReviewSource("");
     setReplacing(null);
     setSelectedQuote("");
@@ -270,9 +296,20 @@ export default function Workspace({
     setView(project.lastView || "findings");
   }, [project.id]);
   const notebook = notebookFor(project);
+  useEffect(() => {
+    if (view !== "editor") setEntryLink(undefined);
+    if (view !== "delivery") setEntryDelivery(undefined);
+    if (view !== "review") setReviewBriefOnly(false);
+  }, [view]);
   const reviewCount = useMemo(
-    () => projectReview(project).length,
-    [project.content, project.sources, project.notebook, project.comparison],
+    () => (toolsOpen ? projectReview(project).length : 0),
+    [
+      toolsOpen,
+      project.content,
+      project.sources,
+      project.notebook,
+      project.comparison,
+    ],
   );
   const activeQuestion =
     notebook.questions.find((q) => q.id === questionId) ||
@@ -313,7 +350,11 @@ export default function Workspace({
   useEffect(() => {
     loadWorkspace()
       .then((v) => {
-        setData(v);
+        setData(
+          initialLanguage
+            ? { ...v, language: initialLanguage, languagePreferenceVersion: 1 }
+            : v,
+        );
         const active = v.projects.find((p) => p.id === v.activeId);
         setView(active?.lastView || "editor");
         // Keep the saved position, but resume the reader only on user request.
@@ -541,17 +582,6 @@ export default function Workspace({
     toast.success(t("版本已保存", "Version saved"));
   };
   const importSources = (incoming: Source[], updateId: string | null) => {
-    const bytes = [...project.sources, ...incoming].reduce(
-      (sum, s) => sum + s.versions.reduce((n, v) => n + v.size, 0),
-      0,
-    );
-    if (bytes > 80 * 1024 * 1024)
-      throw new Error(
-        t(
-          "当前版本每个项目最多存放 80 MB 原文件（含历史版本）",
-          "This version supports 80 MB of original files per project, including revisions",
-        ),
-      );
     if (updateId) {
       const current = project.sources.find((s) => s.id === updateId);
       if (!current)
@@ -560,6 +590,17 @@ export default function Workspace({
         toast.info(t("文件内容没有变化", "The source has not changed"));
         return;
       }
+      const bytes = [...project.sources, ...incoming].reduce(
+        (sum, s) => sum + s.versions.reduce((n, v) => n + v.size, 0),
+        0,
+      );
+      if (bytes > 80 * 1024 * 1024)
+        throw new Error(
+          t(
+            "每个项目最多 80 MB（含历史版本）",
+            "Up to 80 MB per project, including revisions.",
+          ),
+        );
       updateProject({
         sources: project.sources.map((s) =>
           s.id === updateId
@@ -578,32 +619,23 @@ export default function Workspace({
         ),
       );
     } else {
-      const existing = new Set(
-        project.sources.flatMap((s) => s.versions.map((v) => v.hash)),
+      const target = dialog === "import-option" ? importOption : undefined;
+      const { changes, added } = importProjectSources(
+        project,
+        incoming,
+        target,
       );
-      const unique = incoming.filter((s) => {
-        const hash = s.versions[0].hash;
-        if (existing.has(hash)) return false;
-        existing.add(hash);
-        return true;
-      });
-      updateProject({
-        sources: [...project.sources, ...unique],
-        research: project.research
-          ? {
-              ...project.research,
-              selectedSourceIds: [
-                ...project.research.selectedSourceIds,
-                ...unique.map((s) => s.id),
-              ],
-            }
-          : undefined,
-      });
+      if (!updateProject(changes))
+        throw new Error(
+          t("未能保存，请重试。", "Could not save the sources. Try again."),
+        );
       toast.success(
-        t(
-          "已添加 " + unique.length + " 份资料",
-          unique.length + " sources added",
-        ),
+        target
+          ? t("资料已关联到方案", "Sources linked to this option")
+          : t(
+              "已添加 " + added + " 份资料",
+              added + (added === 1 ? " source added" : " sources added"),
+            ),
       );
     }
     setUpdateSourceId(null);
@@ -744,10 +776,6 @@ export default function Workspace({
     if (!newName.trim()) return;
     const next = makeProject(newName.trim(), data.language);
     if (newTemplate === "comparison") {
-      next.comparison = {
-        ...emptyComparison(data.language),
-        findingsLinked: true,
-      };
       next.lastView = "comparison";
     } else {
       next.notebook = emptyNotebook();
@@ -774,6 +802,35 @@ export default function Workspace({
     setDialog(null);
     setView("findings");
     setQuestionId("");
+  };
+  const openDecisionSample = () => {
+    const next = connectComparisonFindings(comparisonExample(data.language));
+    next.content = insertLinkedComparison(next, data.language).content;
+    setData((d) => ({
+      ...d,
+      projects: [...d.projects, next],
+      activeId: next.id,
+    }));
+    setDialog(null);
+    setView("comparison");
+  };
+  const startDecision = (input: DecisionSetupInput) => {
+    const current = dataRef.current.projects.find((p) => p.id === project.id);
+    if (!current) return false;
+    const next = buildDecisionProject(current, input, data.language);
+    const unnamed = ["Untitled research", "未命名研究"].includes(current.name);
+    const title = next.comparison!.objective.slice(0, 160);
+    return updateProject({
+      comparison: next.comparison,
+      ...(unnamed
+        ? {
+            name: title,
+            ...(current.reportTitle === current.name
+              ? { reportTitle: title }
+              : {}),
+          }
+        : {}),
+    });
   };
   const buildComparisonBrief = () => {
     try {
@@ -919,6 +976,7 @@ export default function Workspace({
   const openLinkedFinding = (id: string) => {
     const finding = notebook.findings.find((f) => f.id === id);
     if (!finding) {
+      setArchivedFocus({ kind: "finding", id });
       setDialog("organize");
       return;
     }
@@ -1116,7 +1174,10 @@ export default function Workspace({
               {t("添加资料", "Add source")}
             </button>
           </div>
-          <details className="workspace-tools">
+          <details
+            className="workspace-tools"
+            onToggle={(event) => setToolsOpen(event.currentTarget.open)}
+          >
             <summary>
               {t("更多工具", "More tools")}
               <ChevronDown size={13} />
@@ -1125,10 +1186,6 @@ export default function Workspace({
               <button onClick={() => setDialog("organize")}>
                 <FolderOpen size={16} />
                 {t("整理研究", "Organize research")}
-              </button>
-              <button onClick={() => setView("comparison")}>
-                <Columns3 size={16} />
-                {t("方案比较", "Compare options")}
               </button>
               <button onClick={() => setView("history")}>
                 <Clock3 size={16} />
@@ -1269,7 +1326,7 @@ export default function Workspace({
         <button
           className="brand global-brand"
           onClick={() => {
-            setView("findings");
+            setView(project.comparison ? "comparison" : "findings");
             setFocus(false);
           }}
           aria-label="Folio"
@@ -1376,6 +1433,7 @@ export default function Workspace({
         >
           <div>
             {[
+              ["comparison", t("比较", "Compare")],
               ["findings", t("研究", "Research")],
               ["library", t("资料", "Sources")],
               ["editor", t("简报", "Brief")],
@@ -1429,6 +1487,17 @@ export default function Workspace({
             onBrief={() => setView("editor")}
             onAsk={askQuestion}
           />
+        ) : view === "comparison" && !project.comparison ? (
+          <div className="decision-entry">
+            <div className="decision-entry-inner">
+              <DecisionSetup
+                project={project}
+                language={data.language}
+                onCreate={startDecision}
+                onSample={openDecisionSample}
+              />
+            </div>
+          </div>
         ) : view === "comparison" ? (
           <ComparisonView
             key={project.id}
@@ -1437,12 +1506,34 @@ export default function Workspace({
             onChange={updateComparison}
             onConnect={connectComparison}
             onOpenFinding={openLinkedFinding}
-            onImport={() => {
+            onImport={(optionId) => {
               setUpdateSourceId(null);
-              setDialog("import");
+              setImportOption(optionId || "");
+              setDialog(optionId ? "import-option" : "import");
             }}
-            onExample={addComparisonExample}
             onBuild={buildComparisonBrief}
+            onReviewLink={(blockId) => {
+              setEntryLink(blockId);
+              setView("editor");
+            }}
+            onReviewBrief={() => {
+              setReviewSource("");
+              setReviewBriefOnly(true);
+              setView("review");
+            }}
+            onOrganize={() => {
+              setArchivedFocus(null);
+              setDialog("organize");
+            }}
+            onRestoreQuestion={(id) => {
+              setArchivedFocus({ kind: "question", id });
+              setDialog("organize");
+            }}
+            onBrief={() => setView("editor")}
+            onDelivery={(id) => {
+              setEntryDelivery(id);
+              setView("delivery");
+            }}
           />
         ) : view === "editor" ? (
           <>
@@ -1585,6 +1676,7 @@ export default function Workspace({
                   </div>
                   <div className="paper-divider" />
                   <BriefLinks
+                    initialBlock={entryLink}
                     project={project}
                     language={data.language}
                     onContent={changeLinkedBrief}
@@ -1835,6 +1927,7 @@ export default function Workspace({
           </div>
         ) : view === "delivery" ? (
           <DeliveryView
+            initialEdition={entryDelivery}
             key={project.id}
             project={project}
             language={data.language}
@@ -1850,6 +1943,7 @@ export default function Workspace({
             project={project}
             language={data.language}
             initialSource={reviewSource}
+            initialScope={reviewBriefOnly ? "brief" : "all"}
             onChange={updateProject}
             onBrief={(blockId) => {
               setView("editor");
@@ -2036,7 +2130,12 @@ export default function Workspace({
                             ? t("文档信息", "Document details")
                             : dialogKind === "snapshot"
                               ? t("保存文档版本", "Save document version")
-                              : t("添加到工作空间", "Add to your workspace")}
+                              : dialogKind === "import-option"
+                                ? t("添加资料到 ", "Add sources to ") +
+                                  (project.comparison?.options.find(
+                                    (o) => o.id === importOption,
+                                  )?.name || "")
+                                : t("添加到工作空间", "Add to your workspace")}
             </DialogTitle>
             <DialogDescription>
               {t(
@@ -2058,15 +2157,23 @@ export default function Workspace({
             />
           ) : dialogKind === "organize" ? (
             <NotebookOrganizer
+              archivedTarget={archivedFocus}
               project={project}
               language={data.language}
               onChange={(notebook) => updateProject({ notebook })}
               onOpen={openFinding}
             />
-          ) : ["import", "snapshot", "settings"].includes(dialogKind || "") ? (
+          ) : ["import", "import-option", "snapshot", "settings"].includes(
+              dialogKind || "",
+            ) ? (
             <FeatureDialog
-              key={dialogKind + (updateSourceId || "")}
-              kind={dialogKind!}
+              key={
+                project.id +
+                dialogKind +
+                (updateSourceId || "") +
+                (dialogKind === "import-option" ? importOption : "")
+              }
+              kind={dialogKind === "import-option" ? "import" : dialogKind!}
               project={project}
               language={data.language}
               updateSourceId={updateSourceId}

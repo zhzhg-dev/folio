@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ArrowUpRight,
   Check,
@@ -6,12 +6,13 @@ import {
   Search,
   X,
   FileText,
-  Columns3,
   ArrowRight,
   Loader2,
   Link2,
 } from "lucide-react";
 import { isLinkedFindingArchived } from "@/lib/folio/conclusions";
+import DecisionProgress from "./decision-progress";
+import type { DecisionAction } from "@/lib/folio/decision-progress";
 import {
   Dialog,
   DialogContent,
@@ -19,12 +20,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  emptyComparison,
-  cellStatus,
-  comparisonProgress,
-  comparisonLimits,
-} from "@/lib/folio/comparison";
+import { comparisonLimits } from "@/lib/folio/comparison";
 import {
   uid,
   type Project,
@@ -34,12 +30,17 @@ import {
   type Evidence,
 } from "@/lib/folio/model";
 import { evidenceExists } from "@/lib/folio/research";
-import { findPassagesAsync } from "@/lib/folio/research-task";
 import { errorMessage } from "@/lib/folio/i18n";
-import { findComparisonCandidates } from "@/lib/folio/comparison-task";
+import {
+  findComparisonCandidates,
+  findComparisonCellCandidates,
+} from "@/lib/folio/comparison-task";
 import {
   cellKey,
   comparisonSearchKey,
+  comparisonQueryLines,
+  comparisonQueryLimits,
+  storedComparisonQuery,
   reviewItems,
   currentQuote,
   type CandidateResult,
@@ -51,8 +52,13 @@ type Props = {
   project: Project;
   language: Language;
   onChange: (value: Comparison) => boolean;
-  onImport: () => void;
-  onExample: () => void;
+  onImport: (optionId?: string) => void;
+  onReviewLink: (blockId: string) => void;
+  onReviewBrief: () => void;
+  onOrganize: () => void;
+  onRestoreQuestion: (id: string) => void;
+  onBrief: () => void;
+  onDelivery: (id?: string) => void;
   onBuild: () => void;
   onConnect: () => void;
   onOpenFinding: (id: string) => void;
@@ -62,7 +68,12 @@ export default function ComparisonView({
   language,
   onChange,
   onImport,
-  onExample,
+  onReviewLink,
+  onReviewBrief,
+  onOrganize,
+  onRestoreQuestion,
+  onBrief,
+  onDelivery,
   onBuild,
   onConnect,
   onOpenFinding,
@@ -70,6 +81,9 @@ export default function ComparisonView({
   const t = (zh: string, en: string) => (language === "zh" ? zh : en);
   const c = project.comparison;
   const [filter, setFilter] = useState<ReviewFilter>("all");
+  const sourcePickers = useRef(new Map<string, HTMLDetailsElement>());
+  const recommendation = useRef<HTMLTextAreaElement>(null);
+  const limitations = useRef<HTMLTextAreaElement>(null);
   const [queue, setQueue] = useState<CellAddress[]>([]);
   const [candidates, setCandidates] = useState<{
     key: string;
@@ -88,7 +102,18 @@ export default function ComparisonView({
     return () => batch.current?.abort();
   }, [searchKey]);
   const candidateItems = candidates?.key === searchKey ? candidates.items : [];
-  const visibleItems = reviewItems(project, filter);
+  const allItems = useMemo(
+    () => reviewItems(project),
+    [c?.cells, c?.options, c?.criteria, project.sources],
+  );
+  const visibleItems =
+    filter === "all"
+      ? allItems
+      : allItems.filter((item) => item.status === filter);
+  const entries = useMemo(
+    () => new Map(allItems.map((item) => [cellKey(item), item])),
+    [allItems],
+  );
   const batchSearch = async () => {
     batch.current?.abort();
     const controller = new AbortController();
@@ -108,7 +133,7 @@ export default function ComparisonView({
       if (!controller.signal.aborted && latestKey.current === key)
         setCandidates({ key, items });
     } catch (error) {
-      if (!controller.signal.aborted)
+      if (!controller.signal.aborted && latestKey.current === key)
         setBatchError(errorMessage(error, language));
     } finally {
       if (batch.current === controller) {
@@ -126,7 +151,17 @@ export default function ComparisonView({
     id: string;
     name: string;
   } | null>(null);
-  const counts = comparisonProgress(project);
+  const counts = useMemo(() => {
+    const totals = {
+      total: allItems.length,
+      changed: 0,
+      reviewed: 0,
+      missing: 0,
+      unreviewed: 0,
+    };
+    for (const item of allItems) totals[item.status]++;
+    return totals;
+  }, [allItems]);
   const independentCount =
     c?.cells.filter(
       (cell) => !cell.findingId && (cell.value.trim() || cell.evidence.length),
@@ -140,42 +175,56 @@ export default function ComparisonView({
       changed: t("来源更新", "Source updated"),
       missing: t("待确认", "To confirm"),
     })[status];
-  if (!c)
-    return (
-      <section className="comparison-empty">
-        <span className="comparison-kicker">
-          FOLIO / {t("研究到决策", "RESEARCH TO DECISION")}
-        </span>
-        <Columns3 size={34} strokeWidth={1.2} />
-        <h1>
-          {t("把选择，研究清楚。", "Make the case for your next decision.")}
-        </h1>
-        <p>
-          {t(
-            "将方案放在一起比较。保留每项判断的依据，再写成一份可以交付的简报。",
-            "Compare options side by side. Keep the evidence behind each finding, then turn your work into a decision brief.",
-          )}
-        </p>
-        <div className="comparison-empty-actions">
-          <button
-            className="primary-button"
-            onClick={() => onChange(emptyComparison(language))}
-          >
-            {t("开始比较", "Start a comparison")}
-            <ArrowRight size={16} />
-          </button>
-          <button className="secondary-button" onClick={onExample}>
-            {t("体验示例项目", "Explore a sample")}
-          </button>
-        </div>
-        <small>
-          {t(
-            "可直接使用现有资料，无需下载模型。",
-            "Use the sources in this project. No model download needed.",
-          )}
-        </small>
-      </section>
-    );
+  if (!c) return null;
+  const act = (action: DecisionAction) => {
+    switch (action.type) {
+      case "review-cell":
+        setQueue([]);
+        setEditing({
+          optionId: action.optionId,
+          criterionId: action.criterionId,
+        });
+        return;
+      case "import":
+        return onImport(action.optionId);
+      case "attach": {
+        setFilter("all");
+        const picker = sourcePickers.current.get(action.optionId);
+        if (picker) {
+          picker.open = true;
+          requestAnimationFrame(() => {
+            picker.scrollIntoView({ block: "center", inline: "nearest" });
+            picker.querySelector("summary")?.focus({ preventScroll: true });
+          });
+        }
+        return;
+      }
+      case "restore-finding":
+        return onOpenFinding(action.findingId);
+      case "restore-question":
+        return onRestoreQuestion(action.questionId);
+      case "organize":
+        return onOrganize();
+      case "open-brief":
+        return onBrief();
+      case "recommend":
+        (action.field === "limitations"
+          ? limitations
+          : recommendation
+        ).current?.focus();
+        return;
+      case "insert-brief":
+        return onBuild();
+      case "update-brief":
+        return onReviewLink(action.blockId);
+      case "review-brief":
+        return onReviewBrief();
+      case "prepare-edition":
+        return onDelivery();
+      case "open-edition":
+        return onDelivery(action.deliveryId);
+    }
+  };
   const change = (patch: Partial<Comparison>) => onChange({ ...c, ...patch });
   const updateOption = (
     id: string,
@@ -195,76 +244,70 @@ export default function ComparisonView({
     <section className="comparison-view">
       <header className="comparison-heading">
         <div>
-          <span className="comparison-kicker">
-            {t("比较与决策", "COMPARE & DECIDE")}
-          </span>
-          <h1>
-            {t("每个选择，都有依据。", "A clearer view of your options.")}
-          </h1>
+          <h1>{c.objective || t("方案比较", "Compare options")}</h1>
         </div>
-        <button className="primary-button" onClick={onBuild}>
+        <button className="secondary-button" onClick={onBuild}>
           <FileText size={16} />
           {t("写入研究简报", "Build decision brief")}
         </button>
       </header>
-      <div className="comparison-linkbar">
-        <Link2 size={17} aria-hidden="true" />
-        <div>
-          <strong>
-            {c.findingsLinked
-              ? t("比较与发现保持关联", "Connected to your findings")
-              : t(
-                  "把比较与研究发现关联起来",
-                  "Keep comparison and findings together",
-                )}
-          </strong>
-          <p>
-            {c.findingsLinked
-              ? t(
-                  "在任一处编辑结论，另一处同步；简报更新仍由你确认。归档发现需恢复后编辑。",
-                  "Edit a conclusion in either view. Brief updates stay under your control. Restore archived findings before editing.",
-                )
-              : t(
-                  "保留现有独立发现和正文，为比较记录建立关联发现，今后在两处编辑同一结论。",
-                  "Keep existing independent findings and writing. Connect comparison entries to findings you can edit from either view.",
-                )}
-          </p>
-        </div>
-        {!c.findingsLinked && (
+      <DecisionProgress project={project} language={language} onAction={act} />
+      {!c.findingsLinked && (
+        <div className="comparison-linkbar">
+          <Link2 size={17} aria-hidden="true" />
+          <div>
+            <strong>
+              {t(
+                "把比较与研究发现关联起来",
+                "Connect comparison entries to your findings",
+              )}
+            </strong>
+            <p>
+              {t(
+                "关联后可在两处编辑同一条结论。",
+                "Once connected, you can edit the same conclusion in either view.",
+              )}
+            </p>
+          </div>
           <button className="secondary-button" onClick={onConnect}>
             {t("关联比较", "Connect comparison")}
             {independentCount > 0 && <span>{independentCount}</span>}
           </button>
-        )}
-      </div>
-      <div className="comparison-intent">
-        <label>
-          <span>{t("这次要做什么决定？", "What are you deciding?")}</span>
-          <textarea
-            rows={2}
-            maxLength={10000}
-            value={c.objective}
-            placeholder={t(
-              "例如：为五人团队选择客服软件",
-              "e.g. Choose support software for a team of five",
-            )}
-            onChange={(e) => change({ objective: e.target.value })}
-          />
-        </label>
-        <label>
-          <span>{t("必须满足的条件", "What matters most?")}</span>
-          <textarea
-            rows={2}
-            maxLength={10000}
-            value={c.constraints}
-            placeholder={t(
-              "预算、必须具备的能力、限制…",
-              "Budget, requirements, constraints…",
-            )}
-            onChange={(e) => change({ constraints: e.target.value })}
-          />
-        </label>
-      </div>
+        </div>
+      )}
+      <details className="decision-details">
+        <summary>
+          {t("编辑决策目标与约束", "Edit objective and constraints")}
+        </summary>
+        <div className="comparison-intent">
+          <label>
+            <span>{t("这次要做什么决定？", "What are you deciding?")}</span>
+            <textarea
+              rows={2}
+              maxLength={10000}
+              value={c.objective}
+              placeholder={t(
+                "例如：为五人团队选择客服软件",
+                "e.g. Choose support software for a team of five",
+              )}
+              onChange={(e) => change({ objective: e.target.value })}
+            />
+          </label>
+          <label>
+            <span>{t("必须满足的条件", "What matters most?")}</span>
+            <textarea
+              rows={2}
+              maxLength={10000}
+              value={c.constraints}
+              placeholder={t(
+                "预算、必须具备的能力、限制…",
+                "Budget, requirements, constraints…",
+              )}
+              onChange={(e) => change({ constraints: e.target.value })}
+            />
+          </label>
+        </div>
+      </details>
       <div className="comparison-summary">
         <span>
           <Check size={15} />
@@ -278,7 +321,7 @@ export default function ComparisonView({
         <span>
           {counts.missing} {t("项待确认", "to confirm")}
         </span>
-        <button onClick={onImport}>
+        <button onClick={() => onImport()}>
           <Plus size={14} />
           {t("添加资料", "Add sources")}
         </button>
@@ -373,8 +416,8 @@ export default function ComparisonView({
         ) : (
           <span>
             {t(
-              "按维度检索关联资料；可在维度名称下调整关键词。",
-              "Search linked sources by criterion. Refine terms below each criterion name.",
+              "按维度检索关联资料；未命中时，可在维度名称下按行填写原文用词或不同语言的检索词，也可打开单元格手工选取原文。",
+              "Search linked sources by criterion. If nothing matches, add original wording or different-language terms on separate lines below a criterion, or open a cell to select original text manually.",
             )}
           </span>
         )}
@@ -466,7 +509,13 @@ export default function ComparisonView({
                       <X size={14} />
                     </button>
                   </div>
-                  <details className="option-sources">
+                  <details
+                    className="option-sources"
+                    ref={(node) => {
+                      if (node) sourcePickers.current.set(o.id, node);
+                      else sourcePickers.current.delete(o.id);
+                    }}
+                  >
                     <summary>
                       {o.sourceIds.length}{" "}
                       {t(
@@ -477,28 +526,25 @@ export default function ComparisonView({
                       )}
                     </summary>
                     <div>
-                      {project.sources.length ? (
-                        project.sources.map((s) => (
-                          <label key={s.id}>
-                            <input
-                              type="checkbox"
-                              checked={o.sourceIds.includes(s.id)}
-                              onChange={(e) =>
-                                updateOption(o.id, {
-                                  sourceIds: e.target.checked
-                                    ? [...o.sourceIds, s.id]
-                                    : o.sourceIds.filter((id) => id !== s.id),
-                                })
-                              }
-                            />
-                            {s.name}
-                          </label>
-                        ))
-                      ) : (
-                        <button onClick={onImport}>
-                          {t("先添加资料", "Add a source first")}
-                        </button>
-                      )}
+                      {project.sources.map((s) => (
+                        <label key={s.id}>
+                          <input
+                            type="checkbox"
+                            checked={o.sourceIds.includes(s.id)}
+                            onChange={(e) =>
+                              updateOption(o.id, {
+                                sourceIds: e.target.checked
+                                  ? [...o.sourceIds, s.id]
+                                  : o.sourceIds.filter((id) => id !== s.id),
+                              })
+                            }
+                          />
+                          {s.name}
+                        </label>
+                      ))}
+                      <button onClick={() => onImport(o.id)}>
+                        {t("为此方案导入资料", "Import for this option")}
+                      </button>
                     </div>
                   </details>
                 </th>
@@ -546,15 +592,15 @@ export default function ComparisonView({
                   </div>
                   <details className="criterion-query">
                     <summary>{t("检索词", "Search terms")}</summary>
-                    <input
-                      aria-label={t("检索词：", "Search terms: ") + r.name}
-                      maxLength={500}
+                    <CriterionSearchTerms
+                      language={language}
+                      name={r.name}
                       placeholder={r.name}
                       value={r.query || ""}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         change({
                           criteria: c.criteria.map((x) =>
-                            x.id === r.id ? { ...x, query: e.target.value } : x,
+                            x.id === r.id ? { ...x, query: value } : x,
                           ),
                         })
                       }
@@ -562,10 +608,9 @@ export default function ComparisonView({
                   </details>
                 </th>
                 {c.options.map((o) => {
-                  const cell = c.cells.find(
-                    (x) => x.optionId === o.id && x.criterionId === r.id,
-                  );
-                  const status = cellStatus(cell, project);
+                  const { cell, status } = entries.get(
+                    cellKey({ optionId: o.id, criterionId: r.id }),
+                  )!;
                   return (
                     <td key={o.id}>
                       <button
@@ -669,6 +714,7 @@ export default function ComparisonView({
             maxLength={10000}
             rows={4}
             value={c.recommendation}
+            ref={recommendation}
             onChange={(e) => change({ recommendation: e.target.value })}
             placeholder={t(
               "你倾向哪个方案？哪些取舍影响了判断？",
@@ -682,6 +728,7 @@ export default function ComparisonView({
             maxLength={10000}
             rows={4}
             value={c.limitations}
+            ref={limitations}
             onChange={(e) => change({ limitations: e.target.value })}
             placeholder={t(
               "还缺少哪些资料？哪些条件尚未验证？",
@@ -797,6 +844,75 @@ export default function ComparisonView({
   );
 }
 
+function CriterionSearchTerms({
+  value,
+  name,
+  placeholder,
+  language,
+  onChange,
+}: {
+  value: string;
+  name: string;
+  placeholder: string;
+  language: Language;
+  onChange: (value: string) => boolean;
+}) {
+  const t = (zh: string, en: string) => (language === "zh" ? zh : en);
+  const [draft, setDraft] = useState(value);
+  const [error, setError] = useState("");
+  const helpId = useId();
+  const legacyLines =
+    storedComparisonQuery({ name: "", query: value }) !== value.trim();
+  useEffect(() => {
+    setDraft(value);
+    setError("");
+  }, [value]);
+  return (
+    <>
+      <textarea
+        aria-label={t("检索词：", "Search terms: ") + name}
+        aria-describedby={helpId}
+        aria-invalid={!!error}
+        maxLength={comparisonQueryLimits.characters}
+        rows={3}
+        placeholder={placeholder}
+        value={draft}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+          try {
+            comparisonQueryLines(next);
+            setError("");
+            if (!onChange(next)) setDraft(value);
+          } catch (cause) {
+            setError(
+              errorMessage(cause, language) +
+                " " +
+                t("此次修改尚未保存。", "This edit has not been saved."),
+            );
+          }
+        }}
+      />
+      <p
+        id={helpId}
+        className={error ? "inline-error" : "comparison-help"}
+        role={error ? "alert" : undefined}
+      >
+        {error ||
+          (legacyLines && draft === value
+            ? t(
+                "已保留旧版多行检索词；查找时会用空格合并为一条，不改动保存内容。编辑后请控制在 3 行以内，共 500 字。",
+                "Your older multiline terms are preserved. Search joins them with spaces as one query without rewriting the saved text. New edits must use at most 3 lines and 500 characters.",
+              )
+            : t(
+                "最多 3 行，共 500 字。每行单独检索，可分别写中文、英文或原文中的术语；不会自动翻译或核对结论。留空使用维度名称。",
+                "Up to 3 lines, 500 characters total. Each line searches separately: use English, Chinese or the source's wording. No automatic translation or review. Leave blank to use the criterion name.",
+              ))}
+      </p>
+    </>
+  );
+}
+
 export function CellEditor({
   project,
   comparison,
@@ -830,7 +946,7 @@ export function CellEditor({
       ) || { optionId, criterionId, value: "", kind: "unknown", evidence: [] },
     ),
   );
-  const [query, setQuery] = useState(criterion.query || criterion.name);
+  const [query, setQuery] = useState(() => storedComparisonQuery(criterion));
   const [results, setResults] = useState<Evidence[]>(candidates);
   const [busy, setBusy] = useState(false);
   const [searched, setSearched] = useState(batchSearched);
@@ -842,7 +958,39 @@ export function CellEditor({
   const [quote, setQuote] = useState("");
   const [pageLimit, setPageLimit] = useState(20000);
   const pending = useRef<AbortController | null>(null);
-  useEffect(() => () => pending.current?.abort(), []);
+  // A notebook finding or a review item supplies its own option and source scope.
+  const searchProject =
+    project.comparison === comparison ? project : { ...project, comparison };
+  const searchKey = JSON.stringify([
+    comparisonSearchKey(searchProject),
+    optionId,
+    criterionId,
+    query,
+  ]);
+  const latestSearchKey = useRef(searchKey);
+  const previousSearchKey = useRef(searchKey);
+  latestSearchKey.current = searchKey;
+  const queryHelpId = useId();
+  let queryError = "";
+  try {
+    comparisonQueryLines(query);
+  } catch (cause) {
+    queryError = errorMessage(cause, language);
+  }
+  useEffect(() => {
+    setQuery(storedComparisonQuery(criterion));
+  }, [criterion.query, criterion.name]);
+  useEffect(() => {
+    if (previousSearchKey.current !== searchKey) {
+      pending.current?.abort();
+      setBusy(false);
+      setSearched(false);
+      setResults([]);
+      setError("");
+      previousSearchKey.current = searchKey;
+    }
+    return () => pending.current?.abort();
+  }, [searchKey]);
   useEffect(() => setPageLimit(20000), [sourceId, pageNumber]);
   const edit = (patch: Partial<ComparisonCell>) =>
     setCell((current) => ({ ...current, ...patch, reviewedAt: undefined }));
@@ -869,28 +1017,36 @@ export function CellEditor({
   };
   const search = async () => {
     pending.current?.abort();
+    if (queryError || !query.trim()) return;
     const controller = new AbortController();
     pending.current = controller;
+    const key = searchKey;
     setBusy(true);
     setError("");
     setSearched(false);
     setResults([]);
     try {
-      const found = await findPassagesAsync(
-        project,
+      const found = await findComparisonCellCandidates(
+        searchProject,
+        { optionId, criterionId },
         query,
-        option.sourceIds.filter((id) =>
-          project.sources.some((s) => s.id === id),
-        ),
-        undefined,
         controller.signal,
       );
-      if (!controller.signal.aborted) {
-        setResults(found.evidence);
+      if (
+        !controller.signal.aborted &&
+        pending.current === controller &&
+        latestSearchKey.current === key
+      ) {
+        setResults(found);
         setSearched(true);
       }
     } catch (e) {
-      if (!controller.signal.aborted) setError(errorMessage(e, language));
+      if (
+        !controller.signal.aborted &&
+        pending.current === controller &&
+        latestSearchKey.current === key
+      )
+        setError(errorMessage(e, language));
     } finally {
       if (pending.current === controller) {
         setBusy(false);
@@ -1103,14 +1259,23 @@ export function CellEditor({
               }}
               className="comparison-search"
             >
-              <input
+              <textarea
                 aria-label={t("检索词", "Search terms")}
+                aria-describedby={queryHelpId}
+                aria-invalid={!!queryError}
+                rows={3}
+                maxLength={comparisonQueryLimits.characters}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
               <button
                 aria-label={t("查找依据", "Find evidence")}
-                disabled={busy || !query.trim() || !option.sourceIds.length}
+                disabled={
+                  busy ||
+                  !!queryError ||
+                  !query.trim() ||
+                  !option.sourceIds.length
+                }
               >
                 {busy ? (
                   <Loader2 size={17} className="spin" />
@@ -1119,6 +1284,17 @@ export function CellEditor({
                 )}
               </button>
             </form>
+            <p
+              id={queryHelpId}
+              className={queryError ? "inline-error" : "comparison-help"}
+              role={queryError ? "alert" : undefined}
+            >
+              {queryError ||
+                t(
+                  "最多 3 行，共 500 字；每行单独检索，可分别输入中英文。这里只用于本次查找，不修改维度的检索词；不会自动翻译或标记已核对。",
+                  "Up to 3 lines, 500 characters total. Search each line separately, including different languages. These terms apply to this lookup only. No automatic translation or review.",
+                )}
+            </p>
             <p className="comparison-help">
               {option.sourceIds.length
                 ? t(
@@ -1144,8 +1320,8 @@ export function CellEditor({
             {searched && !results.length && (
               <p className="comparison-help">
                 {t(
-                  "未找到匹配片段。可更换关键词或直接查看原文。",
-                  "No matching passages. Try another term or read the original below.",
+                  "未找到匹配片段，不代表资料没有相关信息。试用原文中的术语，把不同语言写在不同行，或在下方查看并手工选取原文。",
+                  "No matching passages does not mean the information is absent. Try the source's wording, put different languages on separate lines, or read and select original text below.",
                 )}
               </p>
             )}

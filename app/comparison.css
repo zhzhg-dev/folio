@@ -216,7 +216,7 @@
 .criterion-query summary {
   cursor: pointer;
 }
-.criterion-query input {
+.criterion-query textarea {
   width: 100%;
   min-width: 0;
   font: inherit;

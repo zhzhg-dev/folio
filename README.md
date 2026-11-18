@@ -1,12 +1,21 @@
 # Folio
 
-**Keep the source. Own the writing.**
-
-A local-first workspace for comparing options and writing evidence-backed briefs. Connect a comparison to research findings, keep original passages close, and review changes before updating your writing.
+Folio helps you turn proposals, specifications and notes into a decision brief. Compare options against the same criteria, attach the passages behind each finding, and save an edition a recipient can open as an HTML file.
 
 [简体中文](README.zh-CN.md) · [Verification](QA.md) · [MIT license](LICENSE)
 
 Folio opens in English with a Chinese interface available. It needs no account for local work. On-device AI remains experimental and is enabled separately.
+
+## Folio 1.0
+
+Start in **Compare** with a decision and two named options, or open **Explore a support software comparison** to try the fictional example. Existing projects resume where you left them.
+
+- Assign existing sources during setup or import a file directly into an option. Each comparison entry can hold facts, judgments and explicitly documented unknowns.
+- The suggested next step opens a specific entry, changed passage, linked draft or saved edition. When evidence is missing, you can record the gap, explain how it affects the decision, and finish the brief.
+- For mixed-language material, enter up to three lines under a criterion’s **Search terms**. Each line searches the option’s sources independently. You choose which passages to attach and verify.
+- A source revision can reopen a decision. Review the changes before applying them to your brief. Saved recipient editions keep their original text and references.
+
+The local workflow runs without a paid API or model download. The GitHub source is public. The managed deployment uses owner-only access. The bilingual walkthrough and reproducible evaluation cover the release workflow. [Walkthrough](WALKTHROUGH.md) · [Real-material results](EVALUATION.md#10-real-material-decision-acceptance)
 
 ## New in 0.12
 
@@ -15,7 +24,7 @@ Folio opens in English with a Chinese interface available. It needs no account f
 - **A connected brief:** add a finding or comparison once. Later changes appear in **Brief connections** and Research review, even when the quoted passage is unchanged. Preview the current writing beside the latest research, apply an update explicitly, or keep the writing independent. Replacing your manual edits requires confirmation; earlier drafts remain in version history.
 - **Fixed delivery:** saved editions remain unchanged. Delivery records unresolved connection warnings and strips internal connection metadata; Markdown, HTML and Word retain the authored text, tables and citations.
 
-Try it with the fictional sample: **More tools → Compare options → Connect comparison**, edit a cell, and use **Open linked finding**. Add it to the brief, change the finding, then review the update in the brief. Writing is never updated automatically.
+Current releases expose **Compare** in the main navigation. **Connect comparison** is available for older comparisons. Use it, edit a cell, and choose **Open linked finding** to inspect the connection.
 
 **Compatibility:** ordinary existing writing stays independent; this release does not guess which old paragraphs came from a finding. Backups containing connected sections require Folio 0.12 or later. Close older Folio instances before upgrading, keep an independent backup, and do not downgrade a workspace containing connected sections. The Site audience remains owner-only. This release adds no paid API, automatic cloud sync, collaboration or new model-quality claim.
 

@@ -1,6 +1,6 @@
 {
   "name": "folio-workspace",
-  "version": "0.12.0",
+  "version": "1.0.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write app components/folio lib/folio scripts main.ts render.tsx recovery.ts",
     "eval": "node --experimental-strip-types scripts/evaluate-retrieval.mjs",
+    "eval:decision": "node --experimental-strip-types scripts/evaluate-real-decision.mjs",
     "db:generate": "drizzle-kit generate",
     "test:worker": "node --experimental-strip-types scripts/check-worker.mjs"
   },
